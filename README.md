@@ -1,1 +1,1 @@
-# haskell-is-you
+# gloss-tutorial
