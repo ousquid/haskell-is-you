@@ -38,10 +38,10 @@ initialBox :: ObjState
 initialBox = ObjState 0 0 0 0 ObjRight
 
 loadPicture :: ObjDir -> IO (Maybe Picture)
-loadPicture ObjUp    = loadJuicy "baba_up.jpg"
-loadPicture ObjDown  = loadJuicy "baba_down.jpg"
-loadPicture ObjRight = loadJuicy "baba_right.jpg"
-loadPicture ObjLeft  = loadJuicy "baba_left.jpg"
+loadPicture ObjUp    = loadJuicy "haskell_up.jpg"
+loadPicture ObjDown  = loadJuicy "haskell_down.jpg"
+loadPicture ObjRight = loadJuicy "haskell_right.jpg"
+loadPicture ObjLeft  = loadJuicy "haskell_left.jpg"
 
 drawBox :: ObjState -> IO Picture
 drawBox box = do
