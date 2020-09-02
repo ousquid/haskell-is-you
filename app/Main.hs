@@ -9,20 +9,19 @@ import Graphics.Gloss.Interface.IO.Game
 -- Display の設定
 -------------------
 
-windowWidth, windowHeight :: Num a => a
-windowWidth = 640
-windowHeight = 480
-
-window :: Display
-window = InWindow "Hello World" (windowWidth, windowHeight) (100, 100)
+window :: (Int, Int) -> Display
+window (w, h) = InWindow "Hello World" (w*objWidth, h*objHeight) (0, 0)
 
 --------------------------
 -- シミュレーションの実装
 --------------------------
 
-boxWidth, boxHeight :: Float
-boxWidth  = 50
-boxHeight = 50
+objWidth, objHeight :: Num a => a
+objWidth  = 32
+objHeight = 32
+
+objImgScale :: Float
+objImgScale  = 0.1
 
 pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
 pickPicture (x, _, _, _) ObjLeft = x
@@ -38,7 +37,8 @@ type PictureUp    = Picture
 type PictureRight = Picture
 
 data World = World
-  { imageMap :: [(PictureLeft, PictureDown, PictureUp, PictureRight)]
+  { gridLinePicture :: Picture
+  , imageMap :: [(PictureLeft, PictureDown, PictureUp, PictureRight)]
   , worldObjects :: [ObjState]
   , worldSize :: (WorldHeight, WorldWidth)
   }
@@ -53,13 +53,21 @@ data ObjState = ObjState
   , objStateKind :: ObjKind
   }
 
+-----------------------------------
+-- drawWorld関連
+-----------------------------------
+
 drawObj :: ObjState -> Picture -> Picture
-drawObj obj picture = translate ((fromIntegral $ objStateX obj)*50.0) ((fromIntegral $ objStateY obj)*50.0) $ scale 0.1 0.1 picture
+drawObj obj picture = translate ((fromIntegral $ objStateX obj)*objWidth) ((fromIntegral $ objStateY obj)*objHeight) $ scale objImgScale objImgScale picture
 
 drawWorld :: World -> IO Picture
 drawWorld world = do
     let objPictures = [drawObj obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-    return (pictures objPictures)
+    return (pictures (objPictures ++ [gridLinePicture world]))
+
+-----------------------------------
+-- updateWorld関連
+-----------------------------------
 
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
 updateWorld :: Event -> World -> IO World
@@ -90,6 +98,9 @@ updateObjWithKey (Char 'd')            Down = right
 updateObjWithKey (Char 'a')            Down = left
 updateObjWithKey _ _ = id
 
+-----------------------------------
+-- nextWorld関連
+-----------------------------------
 nextBox :: Float -> ObjState -> ObjState
 nextBox dt box =
   let
@@ -101,13 +112,32 @@ nextBox dt box =
 nextWorld :: Float -> World -> IO World
 nextWorld dt world = return world { worldObjects = map (nextBox dt) (worldObjects world) }
 
+-----------------------------------
+-- initWorld関連
+-----------------------------------
+gridLines :: (Int, Int) -> Picture
+gridLines (w, h) = pictures $
+  [color white $ line [(x, fromIntegral $ bottom), (x, fromIntegral $ top)] | x <- map fromIntegral [leftStart, leftStart+objWidth..right]] ++
+  [color white $ line [(fromIntegral $ left, y), (fromIntegral $ right, y)] | y <- map fromIntegral [bottomStart, bottomStart+objHeight..top]]
+  where offsetHeight = if (even h) then objHeight `div` 2 else 0
+        offsetWidth = if (even w) then objWidth `div` 2 else 0
+        top    = (h * objHeight) `div` 2
+        bottom = -top
+        right  = (w * objWidth) `div` 2
+        left   = -right
+        leftStart = left + offsetWidth
+        bottomStart = bottom + offsetHeight
+
+
 initWorld :: IO World
 initWorld = do
   images <- loadObjImage OHaskell
+  let size = (20, 15)
   return World {
+    gridLinePicture = gridLines size,
     imageMap = [images],
     worldObjects = [ObjState 0 0 ObjRight OHaskell, ObjState 3 3 ObjRight OHaskell],
-    worldSize = (100, 100)
+    worldSize = size
   }
 
 loadObjImage :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
@@ -121,11 +151,11 @@ loadObjImage kind = do
 loadPicture :: ObjKind -> ObjDir -> IO (Maybe Picture)
 loadPicture kind dir  = loadJuicy ((show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".jpg")
 
--------------
+-----------------------------------
 -- main 関数
--------------
+-----------------------------------
 
 main :: IO ()
 main = do
   world <- initWorld
-  playIO window black 24 world drawWorld updateWorld nextWorld
+  playIO (window $ worldSize world) black 24 world drawWorld updateWorld nextWorld
