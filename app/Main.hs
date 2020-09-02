@@ -47,16 +47,14 @@ data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 data ObjKind = OHaskell deriving (Show, Enum, Eq)
 
 data ObjState = ObjState
-  { objStateX  :: Float -- x 座標の位置
-  , objStateY  :: Float -- y 座標の位置
-  , objStateVx :: Float -- x 方向の速度
-  , objStateVy :: Float -- y 方向の速度
+  { objStateX  :: Int
+  , objStateY  :: Int
   , objStateDir :: ObjDir
   , objStateKind :: ObjKind
   }
 
 drawObj :: ObjState -> Picture -> Picture
-drawObj obj picture = translate (objStateX obj) (objStateY obj) $ scale 0.1 0.1 picture
+drawObj obj picture = translate ((fromIntegral $ objStateX obj)*50.0) ((fromIntegral $ objStateY obj)*50.0) $ scale 0.1 0.1 picture
 
 drawWorld :: World -> IO Picture
 drawWorld world = do
@@ -71,10 +69,10 @@ updateWorld (EventResize _)       world = return world
 
 -- | 上下左右の速度を与える関数
 up, down, right, left :: ObjState -> ObjState
-up    obj = obj { objStateVy = objStateVy obj + 100, objStateDir = ObjUp }
-down  obj = obj { objStateVy = objStateVy obj - 100, objStateDir = ObjDown }
-right obj = obj { objStateVx = objStateVx obj + 100, objStateDir = ObjRight }
-left  obj = obj { objStateVx = objStateVx obj - 100, objStateDir = ObjLeft }
+up    obj = obj { objStateY = objStateY obj + 1, objStateDir = ObjUp }
+down  obj = obj { objStateY = objStateY obj - 1, objStateDir = ObjDown }
+right obj = obj { objStateX = objStateX obj + 1, objStateDir = ObjRight }
+left  obj = obj { objStateX = objStateX obj - 1, objStateDir = ObjLeft }
 
 updateWorldWithKey :: Key -> KeyState -> World -> World
 updateWorldWithKey key ks world = world { worldObjects = (map (updateObjWithKey key ks) you) ++ remain }
@@ -82,23 +80,23 @@ updateWorldWithKey key ks world = world { worldObjects = (map (updateObjWithKey 
 
 -- | 方向キーとWASDキーに対応して四角形を移動させる
 updateObjWithKey :: Key -> KeyState -> ObjState -> ObjState
-updateObjWithKey (SpecialKey KeyUp)    ks = if ks == Down then up    else down
-updateObjWithKey (SpecialKey KeyDown)  ks = if ks == Down then down  else up
-updateObjWithKey (SpecialKey KeyRight) ks = if ks == Down then right else left
-updateObjWithKey (SpecialKey KeyLeft)  ks = if ks == Down then left  else right
-updateObjWithKey (Char 'w')            ks = if ks == Down then up    else down
-updateObjWithKey (Char 's')            ks = if ks == Down then down  else up
-updateObjWithKey (Char 'd')            ks = if ks == Down then right else left
-updateObjWithKey (Char 'a')            ks = if ks == Down then left  else right
+updateObjWithKey (SpecialKey KeyUp)    Down = up
+updateObjWithKey (SpecialKey KeyDown)  Down = down
+updateObjWithKey (SpecialKey KeyRight) Down = right
+updateObjWithKey (SpecialKey KeyLeft)  Down = left
+updateObjWithKey (Char 'w')            Down = up
+updateObjWithKey (Char 's')            Down = down
+updateObjWithKey (Char 'd')            Down = right
+updateObjWithKey (Char 'a')            Down = left
 updateObjWithKey _ _ = id
 
 nextBox :: Float -> ObjState -> ObjState
 nextBox dt box =
-  let -- 速度を考慮した次のステップでの位置を計算
-      x  = objStateX box + objStateVx box * dt
-      y  = objStateY box + objStateVy box * dt
+  let
+      x  = objStateX box
+      y  = objStateY box
 
-   in box { objStateX = x, objStateY = y }
+  in box { objStateX = x, objStateY = y }
 
 nextWorld :: Float -> World -> IO World
 nextWorld dt world = return world { worldObjects = map (nextBox dt) (worldObjects world) }
@@ -108,7 +106,7 @@ initWorld = do
   images <- loadObjImage OHaskell
   return World {
     imageMap = [images],
-    worldObjects = [ObjState 0 0 0 0 ObjRight OHaskell],
+    worldObjects = [ObjState 0 0 ObjRight OHaskell, ObjState 3 3 ObjRight OHaskell],
     worldSize = (100, 100)
   }
 
