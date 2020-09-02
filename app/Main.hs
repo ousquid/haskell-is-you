@@ -1,5 +1,6 @@
 module Main where
 import Data.Maybe
+import Data.List
 import Graphics.Gloss
 import Graphics.Gloss.Juicy
 import Graphics.Gloss.Interface.IO.Game
@@ -42,8 +43,8 @@ data World = World
   , worldSize :: (WorldHeight, WorldWidth)
   }
 
-data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight
-data ObjKind = OHaskell deriving (Show, Enum)
+data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
+data ObjKind = OHaskell deriving (Show, Enum, Eq)
 
 data ObjState = ObjState
   { objStateX  :: Float -- x 座標の位置
@@ -63,7 +64,7 @@ drawWorld world = do
     return (pictures objPictures)
 
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
-updateWorld :: Event -> ObjState -> IO ObjState
+updateWorld :: Event -> World -> IO World
 updateWorld (EventKey key ks _ _) world = return $ updateWorldWithKey key ks world
 updateWorld (EventMotion _)       world = return world
 updateWorld (EventResize _)       world = return world
@@ -100,27 +101,24 @@ nextBox dt box =
    in box { objStateX = x, objStateY = y }
 
 nextWorld :: Float -> World -> IO World
-nextWorld dt world = world { worldObjects = map (nextBox dt) (worldObjects world) }
+nextWorld dt world = return world { worldObjects = map (nextBox dt) (worldObjects world) }
 
-initWorld :: World
-initWorld = World {
-  imageMap = [loadObjImage OHaskell],
-  worldObjects = [ObjState 0 0 0 0 ObjRight OHaskell],
-  worldSize = (100, 100)
-}
+initWorld :: IO World
+initWorld = do
+  images <- loadObjImage OHaskell
+  return World {
+    imageMap = [images],
+    worldObjects = [ObjState 0 0 0 0 ObjRight OHaskell],
+    worldSize = (100, 100)
+  }
 
-drawBox :: ObjState -> IO Picture
-drawBox box = do
-    Just img <- loadPicture (objStateDir box)
-    return (translate (objStateX box) (objStateY box) $ scale 0.1 0.1 img)
-
-loadObjImage :: ObjKind -> (PictureLeft, PictureDown, PictureUp, PictureRight)
+loadObjImage :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
 loadObjImage kind = do
     Just left <- loadPicture kind ObjLeft
     Just down <- loadPicture kind ObjDown
     Just up <- loadPicture kind ObjUp
     Just right <- loadPicture kind ObjRight
-    (left, down, up, right)
+    return (left, down, up, right)
 
 loadPicture :: ObjKind -> ObjDir -> IO (Maybe Picture)
 loadPicture kind dir  = loadJuicy ((show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".jpg")
@@ -130,6 +128,6 @@ loadPicture kind dir  = loadJuicy ((show kind) ++ "_" ++ (drop 3 $ show dir) ++ 
 -------------
 
 main :: IO ()
-main = let world = initWorld
-       in  playIO window black 24 world drawBox updateBox nextBox
-
+main = do
+  world <- initWorld
+  playIO window black 24 world drawWorld updateWorld nextWorld
