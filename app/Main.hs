@@ -1,6 +1,7 @@
 module Main where
 import Data.Maybe
 import Data.List
+import Data.Char
 import Graphics.Gloss
 import Graphics.Gloss.Juicy
 import Graphics.Gloss.Interface.IO.Game
@@ -17,11 +18,11 @@ window (w, h) = InWindow "Hello World" (w*objWidth, h*objHeight) (0, 0)
 --------------------------
 
 objWidth, objHeight :: Num a => a
-objWidth  = 32
-objHeight = 32
+objWidth  = 64
+objHeight = 64
 
 objImgScale :: Float
-objImgScale  = 0.1
+objImgScale  = objWidth / 320
 
 pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
 pickPicture (x, _, _, _) ObjLeft = x
@@ -44,7 +45,7 @@ data World = World
   }
 
 data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
-data ObjKind = OHaskell deriving (Show, Enum, Eq)
+data ObjKind = OHaskell | THaskell | TIs | TYou deriving (Show, Enum, Eq)
 
 data ObjState = ObjState
   { objStateX  :: Int
@@ -131,14 +132,27 @@ gridLines (w, h) = pictures $
 
 initWorld :: IO World
 initWorld = do
-  images <- loadObjImage OHaskell
+  obj_images <- loadObjImage OHaskell
+  haskell_images <- loadObjText THaskell
+  is_images <- loadObjText TIs
+  you_images <- loadObjText TYou
   let size = (20, 15)
   return World {
     gridLinePicture = gridLines size,
-    imageMap = [images],
-    worldObjects = [ObjState 0 0 ObjRight OHaskell, ObjState 3 3 ObjRight OHaskell],
+    imageMap = [obj_images, haskell_images, is_images, you_images],
+    worldObjects = [ObjState 0 0 ObjRight OHaskell, ObjState 3 3 ObjRight OHaskell, ObjState 1 1 ObjLeft THaskell, ObjState 2 1 ObjLeft TIs, ObjState 3 1 ObjLeft TYou],
     worldSize = size
   }
+  
+loadObjText :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
+loadObjText kind = do
+    let txt = color red $ translate offsetWidth offsetHeight $ scale renderScale 2.0 $ text renderText
+        offsetHeight = - objHeight / 2 / objImgScale
+        offsetWidth = - objWidth / 2 / objImgScale
+        renderText = map toUpper $ tail $ show kind
+        renderScale =  3.5 / fromIntegral(length renderText)
+    return (txt, txt, txt, txt)
+  
 
 loadObjImage :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
 loadObjImage kind = do
