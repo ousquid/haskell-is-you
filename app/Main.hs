@@ -24,12 +24,6 @@ objHeight = 64
 objImgScale :: Float
 objImgScale  = objWidth / 320
 
-pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
-pickPicture (x, _, _, _) ObjLeft = x
-pickPicture (_, x, _, _) ObjDown = x
-pickPicture (_, _, x, _) ObjUp = x
-pickPicture (_, _, _, x) ObjRight = x
-
 type WorldHeight = Int
 type WorldWidth  = Int
 type PictureLeft  = Picture
@@ -46,12 +40,16 @@ data World = World
 
 data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 data ObjKind = OHaskell | THaskell | TIs | TYou deriving (Show, Enum, Eq)
+-- data ObjKind = ObjKindObj ObjObj | ObjKindText ObjText
+-- data ObjObj = OHaskell deriving (Show, Enum, Eq)
+-- data ObjText = THaskell | TIs | TYou deriving (Show, Enum, Eq)
 
 data ObjState = ObjState
   { objStateX  :: Int
   , objStateY  :: Int
   , objStateDir :: ObjDir
   , objStateKind :: ObjKind
+  , objStateIText :: Bool
   }
 
 -----------------------------------
@@ -60,6 +58,12 @@ data ObjState = ObjState
 
 drawObj :: ObjState -> Picture -> Picture
 drawObj obj picture = translate ((fromIntegral $ objStateX obj)*objWidth) ((fromIntegral $ objStateY obj)*objHeight) $ scale objImgScale objImgScale picture
+
+pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
+pickPicture (x, _, _, _) ObjLeft = x
+pickPicture (_, x, _, _) ObjDown = x
+pickPicture (_, _, x, _) ObjUp = x
+pickPicture (_, _, _, x) ObjRight = x
 
 drawWorld :: World -> IO Picture
 drawWorld world = do
@@ -132,15 +136,25 @@ gridLines (w, h) = pictures $
 
 initWorld :: IO World
 initWorld = do
-  obj_images <- loadObjImage OHaskell
-  haskell_images <- loadObjText THaskell
-  is_images <- loadObjText TIs
-  you_images <- loadObjText TYou
+  let generateEnumValues :: (Enum a) => [a]
+      generateEnumValues = enumFrom (toEnum 0)
+
+  
+
+  --obj_images <- loadObjImage OHaskell
+  --haskell_images <- loadObjImage THaskell
+  --is_images <- loadObjImage TIs
+  --you_images <- loadObjImage TYou
+  obj_images <- mapM loadObjImage (generateEnumValues :: [ObjKind])
   let size = (20, 15)
   return World {
     gridLinePicture = gridLines size,
-    imageMap = [obj_images, haskell_images, is_images, you_images],
-    worldObjects = [ObjState 0 0 ObjRight OHaskell, ObjState 3 3 ObjRight OHaskell, ObjState 1 1 ObjLeft THaskell, ObjState 2 1 ObjLeft TIs, ObjState 3 1 ObjLeft TYou],
+    imageMap = obj_images,
+    worldObjects = [ObjState 0 0 ObjRight OHaskell False, 
+                    ObjState 3 3 ObjRight OHaskell False, 
+                    ObjState 1 1 ObjLeft THaskell True, 
+                    ObjState 2 1 ObjLeft TIs True, 
+                    ObjState 3 1 ObjLeft TYou True],
     worldSize = size
   }
   
