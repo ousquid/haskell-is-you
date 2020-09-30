@@ -35,11 +35,26 @@ data World = World
   { gridLinePicture :: Picture
   , imageMap :: [(PictureLeft, PictureDown, PictureUp, PictureRight)]
   , worldObjects :: [ObjState]
-  , worldSize :: (WorldHeight, WorldWidth)
+  , worldSize :: (WorldWidth, WorldHeight)
+--  , rules :: [Rule]
   }
 
+-- data Rule = Rule
+--   { priority :: Int
+--   , S :: ?
+--   , V :: ?
+--   , C :: ?
+--   }
+-- 1.
+
+
+-- <BABA AND KEKE> <NOT ON [KEY AND STONE]> IS YOU
+--   BABA NOT ON KEY AND STONE IS YOU
+--   KEKE NOT ON KEY AND STONE IS YOU
+
 data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
-data ObjKind = OHaskell | THaskell | TIs | TYou deriving (Show, Enum, Eq)
+data ObjKind = OHaskell | THaskell | ORock | TRock | OWall |
+ TWall | OFlag | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Show, Enum, Eq)
 -- data ObjKind = ObjKindObj ObjObj | ObjKindText ObjText
 -- data ObjObj = OHaskell deriving (Show, Enum, Eq)
 -- data ObjText = THaskell | TIs | TYou deriving (Show, Enum, Eq)
@@ -56,8 +71,8 @@ data ObjState = ObjState
 -- drawWorld関連
 -----------------------------------
 
-drawObj :: ObjState -> Picture -> Picture
-drawObj obj picture = translate ((fromIntegral $ objStateX obj)*objWidth) ((fromIntegral $ objStateY obj)*objHeight) $ scale objImgScale objImgScale picture
+drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
+drawObj (width, height) obj picture = translate ((fromIntegral $ (objStateX obj) - width `div` 2)*objWidth) ((fromIntegral $ (objStateY obj) - height `div` 2)*objHeight) $ scale objImgScale objImgScale picture
 
 pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
 pickPicture (x, _, _, _) ObjLeft = x
@@ -67,7 +82,7 @@ pickPicture (_, _, _, x) ObjRight = x
 
 drawWorld :: World -> IO Picture
 drawWorld world = do
-    let objPictures = [drawObj obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
+    let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
     return (pictures (objPictures ++ [gridLinePicture world]))
 
 -----------------------------------
@@ -139,34 +154,37 @@ initWorld = do
   let generateEnumValues :: (Enum a) => [a]
       generateEnumValues = enumFrom (toEnum 0)
 
-  
+
 
   --obj_images <- loadObjImage OHaskell
   --haskell_images <- loadObjImage THaskell
   --is_images <- loadObjImage TIs
   --you_images <- loadObjImage TYou
   obj_images <- mapM loadObjImage (generateEnumValues :: [ObjKind])
-  let size = (20, 15)
+  let size = (33, 18)
+  let walls = [ObjState x y ObjRight OWall False | x <- [11..21], y <- [6, 10]]
   return World {
     gridLinePicture = gridLines size,
     imageMap = obj_images,
-    worldObjects = [ObjState 0 0 ObjRight OHaskell False, 
-                    ObjState 3 3 ObjRight OHaskell False, 
-                    ObjState 1 1 ObjLeft THaskell True, 
-                    ObjState 2 1 ObjLeft TIs True, 
-                    ObjState 3 1 ObjLeft TYou True],
+    worldObjects = [ObjState 11 12 ObjRight THaskell True,
+                    ObjState 12 12 ObjRight TIs True,
+                    ObjState 13 12 ObjRight TYou True,
+                    ObjState 19 12 ObjRight TFlag True,
+                    ObjState 20 12 ObjRight TIs True,
+                    ObjState 21 12 ObjRight TWin True,
+                    ObjState 16 9 ObjRight ORock False,
+                    ObjState 16 8 ObjRight ORock False,
+                    ObjState 16 7 ObjRight ORock False,
+                    ObjState 11 4 ObjRight TWall True,
+                    ObjState 12 4 ObjRight TIs True,
+                    ObjState 13 4 ObjRight TStop True,
+                    ObjState 19 4 ObjRight TRock True,
+                    ObjState 20 4 ObjRight TIs True,
+                    ObjState 21 4 ObjRight TPush True,
+                    ObjState 12 8 ObjRight OHaskell False,
+                    ObjState 20 8 ObjLeft OFlag False] ++ walls,
     worldSize = size
   }
-  
-loadObjText :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
-loadObjText kind = do
-    let txt = color red $ translate offsetWidth offsetHeight $ scale renderScale 2.0 $ text renderText
-        offsetHeight = - objHeight / 2 / objImgScale
-        offsetWidth = - objWidth / 2 / objImgScale
-        renderText = map toUpper $ tail $ show kind
-        renderScale =  3.5 / fromIntegral(length renderText)
-    return (txt, txt, txt, txt)
-  
 
 loadObjImage :: ObjKind -> IO (PictureLeft, PictureDown, PictureUp, PictureRight)
 loadObjImage kind = do
