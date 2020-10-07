@@ -52,20 +52,20 @@ data World = World
 --   BABA NOT ON KEY AND STONE IS YOU
 --   KEKE NOT ON KEY AND STONE IS YOU
 
-data ObjDir = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 data ObjKind = OHaskell | THaskell | ORock | TRock | OWall |
  TWall | OFlag | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Show, Enum, Eq)
 -- data ObjKind = ObjKindObj ObjObj | ObjKindText ObjText
 -- data ObjObj = OHaskell deriving (Show, Enum, Eq)
 -- data ObjText = THaskell | TIs | TYou deriving (Show, Enum, Eq)
+data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 
 data ObjState = ObjState
   { objStateX  :: Int
   , objStateY  :: Int
-  , objStateDir :: ObjDir
+  , objStateDir :: Direction
   , objStateKind :: ObjKind
   , objStateIText :: Bool
-  }
+  } deriving (Show, Eq)
 
 -----------------------------------
 -- drawWorld関連
@@ -74,7 +74,7 @@ data ObjState = ObjState
 drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
 drawObj (width, height) obj picture = translate ((fromIntegral $ (objStateX obj) - width `div` 2)*objWidth) ((fromIntegral $ (objStateY obj) - height `div` 2)*objHeight) $ scale objImgScale objImgScale picture
 
-pickPicture :: (Picture, Picture, Picture, Picture) -> ObjDir -> Picture
+pickPicture :: (Picture, Picture, Picture, Picture) -> Direction -> Picture
 pickPicture (x, _, _, _) ObjLeft = x
 pickPicture (_, x, _, _) ObjDown = x
 pickPicture (_, _, x, _) ObjUp = x
@@ -95,28 +95,53 @@ updateWorld (EventKey key ks _ _) world = return $ updateWorldWithKey key ks wor
 updateWorld (EventMotion _)       world = return world
 updateWorld (EventResize _)       world = return world
 
--- | 上下左右の速度を与える関数
-up, down, right, left :: ObjState -> ObjState
-up    obj = obj { objStateY = objStateY obj + 1, objStateDir = ObjUp }
-down  obj = obj { objStateY = objStateY obj - 1, objStateDir = ObjDown }
-right obj = obj { objStateX = objStateX obj + 1, objStateDir = ObjRight }
-left  obj = obj { objStateX = objStateX obj - 1, objStateDir = ObjLeft }
-
 updateWorldWithKey :: Key -> KeyState -> World -> World
-updateWorldWithKey key ks world = world { worldObjects = (map (updateObjWithKey key ks) you) ++ remain }
-  where (you, remain) = partition (\x -> objStateKind x == OHaskell) (worldObjects world)
+updateWorldWithKey key ks world = case (getDirection key ks) of
+                                    Just dir -> walk world dir
+                                    Nothing -> world
+
+walk :: World -> Direction -> World
+walk world d = world { worldObjects = unmovableList ++ (map (stepObject d) movableList)}
+  where (youList, remainList) = partition (\x -> objStateKind x == OHaskell) (worldObjects world)
+        movableList = nub $ concatMap (getMovableList (worldObjects world) d) youList
+        unmovableList = (worldObjects world) \\ movableList
+
+stepObject :: Direction -> ObjState -> ObjState
+stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
+  where (newX, newY) = updateXY (objStateX obj) (objStateY obj) d
+
+getMovableList :: [ObjState] -> Direction -> ObjState -> [ObjState]
+getMovableList objects dir you = case obj of
+                                    Nothing -> [you]
+                                    Just a -> 
+                                      case (objStateKind a) of
+                                        OWall -> []
+                                        otherwise -> if (movableList == []) then [] else you:movableList
+                                          where movableList = getMovableList objects dir a
+  where x = objStateX you
+        y = objStateY you
+        obj = findObject objects (updateXY x y dir)
+
+updateXY :: Int -> Int -> Direction -> (Int, Int)
+updateXY x y ObjLeft  = (x-1, y)
+updateXY x y ObjDown  = (x, y-1)
+updateXY x y ObjUp    = (x, y+1)
+updateXY x y ObjRight = (x+1, y)
+
+findObject :: [ObjState] -> (Int,Int) -> Maybe ObjState
+findObject objects (x,y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects 
 
 -- | 方向キーとWASDキーに対応して四角形を移動させる
-updateObjWithKey :: Key -> KeyState -> ObjState -> ObjState
-updateObjWithKey (SpecialKey KeyUp)    Down = up
-updateObjWithKey (SpecialKey KeyDown)  Down = down
-updateObjWithKey (SpecialKey KeyRight) Down = right
-updateObjWithKey (SpecialKey KeyLeft)  Down = left
-updateObjWithKey (Char 'w')            Down = up
-updateObjWithKey (Char 's')            Down = down
-updateObjWithKey (Char 'd')            Down = right
-updateObjWithKey (Char 'a')            Down = left
-updateObjWithKey _ _ = id
+getDirection :: Key -> KeyState -> Maybe Direction
+getDirection (SpecialKey KeyLeft)  Down = Just ObjLeft
+getDirection (SpecialKey KeyDown)  Down = Just ObjDown
+getDirection (SpecialKey KeyUp)    Down = Just ObjUp
+getDirection (SpecialKey KeyRight) Down = Just ObjRight
+getDirection (Char 'a')            Down = Just ObjLeft
+getDirection (Char 's')            Down = Just ObjDown
+getDirection (Char 'w')            Down = Just ObjUp
+getDirection (Char 'd')            Down = Just ObjRight
+getDirection _ _ = Nothing
 
 -----------------------------------
 -- nextWorld関連
@@ -194,7 +219,7 @@ loadObjImage kind = do
     Just right <- loadPicture kind ObjRight
     return (left, down, up, right)
 
-loadPicture :: ObjKind -> ObjDir -> IO (Maybe Picture)
+loadPicture :: ObjKind -> Direction -> IO (Maybe Picture)
 loadPicture kind dir  = loadJuicy ((show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".jpg")
 
 -----------------------------------
