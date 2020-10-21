@@ -37,27 +37,17 @@ data World = World
   , imageMap :: M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight)
   , worldObjects :: [ObjState]
   , worldSize :: (WorldWidth, WorldHeight)
---  , rules :: [Rule]
+  , rules :: [Rule]
   }
 
--- data Rule = Rule
---   { priority :: Int
---   , S :: ?
---   , V :: ?
---   , C :: ?
---   }
--- 1.
+data Rule = Rule
+  { priority :: Int
+  , ruleS :: Text
+  , ruleV :: Text
+  , ruleC :: Text
+  }
 
 
--- <BABA AND KEKE> <NOT ON [KEY AND STONE]> IS YOU
---   BABA NOT ON KEY AND STONE IS YOU
---   KEKE NOT ON KEY AND STONE IS YOU
-
--- data ObjKind = OHaskell | THaskell | ORock | TRock | OWall |
---  TWall | OFlag | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Show, Enum, Eq)
--- data ObjKind = ObjKindObj ObjObj | ObjKindText ObjText
--- data ObjObj = OHaskell deriving (Show, Enum, Eq)
--- data ObjText = THaskell | TIs | TYou deriving (Show, Enum, Eq)
 data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 
 data ObjState = ObjState
@@ -115,11 +105,36 @@ updateWorld (EventResize _)       world = return world
 
 updateWorldWithKey :: Key -> KeyState -> World -> World
 updateWorldWithKey key ks world = case (getDirection key ks) of
-                                    Just dir -> walk world dir
+                                    Just dir -> newWorld
                                     Nothing -> world
+                                    where newWorld = walk dir (updateRule world)
 
-walk :: World -> Direction -> World
-walk world d = world { worldObjects = unmovableList ++ (map (stepObject d) movableList)}
+updateRule :: world -> world
+updateRule world = world {Rule = (concatMap (getRules world) is_list)}
+  where is_list = filter ((==) ObjKindText TIs) (worldObjects world)
+        getText :: ObjState -> [ObjState]  -- ObjStateがTextならそのものを、ObjStateがObjectなら空を返す
+        getText obj = case (objStateKind obj) of 
+          ObjKindText _ -> [obj]
+          ObjKindObj _ -> []
+        texts = concatMap getText (worldObjects world)
+        getRules :: [ObjState] -> ObjState -> [Rule]
+        getRules texts is = verticalRule ++ horizontalRule
+          where
+            x = objStateX is
+            y = objStateY is
+            upObj = findObject texts (x, y+1)
+            downObj = findObject texts (x, y-1)
+            verticalRule = createRule upObj downObj
+            leftObj = findObject texts (x-1, y)
+            rightObj = findObject texts (x+1, y)
+            horizontalRule = createRule leftObj rightObj
+            createRule sObj cObj = case (sObj, cObj) of
+              (Just a, Just b) -> [Rule {sRule = a, vRule = is, cRule = b}]
+              otherwise -> []
+
+
+walk :: Direction -> World -> World
+walk d world = world { worldObjects = unmovableList ++ (map (stepObject d) movableList)}
   where (youList, remainList) = partition (\x -> objStateKind x == ObjKindObj OHaskell) (worldObjects world)
         movableList = nub $ concatMap (getMovableList (worldObjects world) d) youList
         unmovableList = (worldObjects world) \\ movableList
