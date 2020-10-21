@@ -37,6 +37,7 @@ executables:
     - gloss
     - gloss-juicy
     - gloss-tutorial
+    - containers
 
 tests:
   gloss-tutorial-test:

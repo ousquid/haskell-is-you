@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7c428350c97ad9be8b20715437ed6d962019607e7ff7a9dc10465c7d4829022b
+-- hash: 60b5288811f59364cb6e69835dd71cfb02b3d665104f68bdbcbb83280ee1f74a
 
 name:           gloss-tutorial
 version:        0.1.0.0
@@ -45,6 +45,7 @@ executable gloss-tutorial-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers
     , gloss
     , gloss-juicy
     , gloss-tutorial
