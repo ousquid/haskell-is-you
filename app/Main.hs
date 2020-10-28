@@ -1,4 +1,5 @@
 module Main where
+import Debug.Trace
 import Data.Maybe
 import Data.List
 import Data.Char
@@ -6,6 +7,7 @@ import Graphics.Gloss
 import Graphics.Gloss.Juicy
 import Graphics.Gloss.Interface.IO.Game
 import qualified Data.Map.Strict as M
+
 
 -------------------
 -- Display の設定
@@ -41,8 +43,7 @@ data World = World
   }
 
 data Rule = Rule
-  { priority :: Int
-  , ruleS :: Text
+  { ruleS :: Text
   , ruleV :: Text
   , ruleC :: Text
   }
@@ -60,19 +61,20 @@ data ObjState = ObjState
 
 
 class ObjKindInterface a where
-  getObject :: a -> String -- TWall -> "OWall"
+  liftObjState :: a -> ObjKind
 
 instance ObjKindInterface Text where
-  getObject text = "O" ++ (drop 1 $ show text)
+  liftObjState text = ObjKindText text
 
 instance ObjKindInterface Object where
-  getObject text = "T" ++ (drop 1 $ show text)
+  liftObjState obj = ObjKindObj obj
 
 data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
-data Text = THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord)
-data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord)
+data Text = THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord, Read)
+data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord, Read)
 
-
+text2Object :: Text -> Object
+text2Object text = read $ "O" ++ (drop 1 $ show text)
 
 -----------------------------------
 -- drawWorld関連
@@ -106,14 +108,16 @@ updateWorld (EventResize _)       world = return world
 updateWorldWithKey :: Key -> KeyState -> World -> World
 updateWorldWithKey key ks world = case (getDirection key ks) of
                                     Just dir -> newWorld
+                                      where newWorld = walk dir (updateRule world)
                                     Nothing -> world
-                                    where newWorld = walk dir (updateRule world)
 
-updateRule :: world -> world
-updateRule world = world {Rule = (concatMap (getRules world) is_list)}
-  where is_list = filter ((==) ObjKindText TIs) (worldObjects world)
+updateRule :: World -> World
+updateRule world = world {rules = (concatMap (getRules texts) is_list)}
+  where is_list :: [ObjState]
+        is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
+
         getText :: ObjState -> [ObjState]  -- ObjStateがTextならそのものを、ObjStateがObjectなら空を返す
-        getText obj = case (objStateKind obj) of 
+        getText obj = case (objStateKind obj) of
           ObjKindText _ -> [obj]
           ObjKindObj _ -> []
         texts = concatMap getText (worldObjects world)
@@ -122,38 +126,54 @@ updateRule world = world {Rule = (concatMap (getRules world) is_list)}
           where
             x = objStateX is
             y = objStateY is
-            upObj = findObject texts (x, y+1)
-            downObj = findObject texts (x, y-1)
+            upObj = findText texts (x, y+1)
+            downObj = findText texts (x, y-1)
             verticalRule = createRule upObj downObj
-            leftObj = findObject texts (x-1, y)
-            rightObj = findObject texts (x+1, y)
+            leftObj = findText texts (x-1, y)
+            rightObj = findText texts (x+1, y)
             horizontalRule = createRule leftObj rightObj
+
             createRule sObj cObj = case (sObj, cObj) of
-              (Just a, Just b) -> [Rule {sRule = a, vRule = is, cRule = b}]
+              (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
               otherwise -> []
+            findText :: [ObjState] -> (Int,Int) -> Maybe Text
+            findText objects (x,y) = do
+              obj <- findObject objects (x,y)
+              let ObjKindText txt = objStateKind obj
+              return txt
+
 
 
 walk :: Direction -> World -> World
-walk d world = world { worldObjects = unmovableList ++ (map (stepObject d) movableList)}
+walk d world = world { worldObjects = unmovableList ++ (map (stepObject d) movableList) }
   where (youList, remainList) = partition (\x -> objStateKind x == ObjKindObj OHaskell) (worldObjects world)
-        movableList = nub $ concatMap (getMovableList (worldObjects world) d) youList
+        movableList = nub $ concatMap (getMovableList (worldObjects world) (rules world) d) youList
         unmovableList = (worldObjects world) \\ movableList
 
 stepObject :: Direction -> ObjState -> ObjState
 stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
   where (newX, newY) = updateXY (objStateX obj) (objStateY obj) d
 
-getMovableList :: [ObjState] -> Direction -> ObjState -> [ObjState]
-getMovableList objects dir you = case obj of
+getMovableList :: [ObjState] -> [Rule] -> Direction -> ObjState -> [ObjState]
+getMovableList objects rules dir you = case obj of
                                     Nothing -> [you]
-                                    Just a -> 
-                                      case (objStateKind a) of
-                                        ObjKindObj OWall -> []
-                                        otherwise -> if (movableList == []) then [] else you:movableList
-                                          where movableList = getMovableList objects dir a
+                                    Just a ->
+                                      if pushable
+                                        then if (movableList == []) then [] else you:movableList
+                                        else []
+                                        where movableList = getMovableList objects rules dir a
+                                              isPush = (objStateKind a) `elem` (map liftObjState $ map text2Object $ getSubjects rules TPush)
+                                              isText = case (objStateKind a) of
+                                                ObjKindText _ -> True
+                                                ObjKindObj _ -> False
+                                              pushable = isText || isPush
   where x = objStateX you
         y = objStateY you
-        obj = findObject objects (updateXY x y dir)
+        obj = trace "findObjectInWalk" (findObject objects (updateXY x y dir))
+
+
+getSubjects :: [Rule] -> Text -> [Text]
+getSubjects rules c = map ruleS $ filter (\rule -> (ruleC rule) == c) rules
 
 updateXY :: Int -> Int -> Direction -> (Int, Int)
 updateXY x y ObjLeft  = (x-1, y)
@@ -162,7 +182,7 @@ updateXY x y ObjUp    = (x, y+1)
 updateXY x y ObjRight = (x+1, y)
 
 findObject :: [ObjState] -> (Int,Int) -> Maybe ObjState
-findObject objects (x,y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects 
+findObject objects (x,y) = trace "findObject" (find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects)
 
 -- | 方向キーとWASDキーに対応して四角形を移動させる
 getDirection :: Key -> KeyState -> Maybe Direction
@@ -211,10 +231,10 @@ initWorld :: IO World
 initWorld = do
   let generateEnumValues :: (Enum a) => [a]
       generateEnumValues = enumFrom (toEnum 0)
-      objectToObjKindObjObj :: Object -> ObjKind 
-      objectToObjKindObjObj a = ObjKindObj a 
-      objectToObjKindTextText :: Text -> ObjKind 
-      objectToObjKindTextText a = ObjKindText a 
+      objectToObjKindObjObj :: Object -> ObjKind
+      objectToObjKindObjObj a = ObjKindObj a
+      objectToObjKindTextText :: Text -> ObjKind
+      objectToObjKindTextText a = ObjKindText a
 
   --obj_images <- loadObjImage OHaskell
   --haskell_images <- loadObjImage THaskell
@@ -246,7 +266,8 @@ initWorld = do
                     ObjState 21 4 ObjRight (ObjKindText TPush) True,
                     ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
                     ObjState 20 8 ObjLeft (ObjKindObj OFlag) False] ++ walls,
-    worldSize = size
+    worldSize = size,
+    rules = []
   }
 
 loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
