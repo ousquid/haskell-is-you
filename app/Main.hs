@@ -150,7 +150,8 @@ updateRule world = world {rules = concatMap (getRules texts) is_list}
 
 walk :: Direction -> World -> World
 walk d world = world { worldObjects = unmovableList ++ (map (stepObject d) movableList) }
-  where (youList, remainList) = partition (\x -> objStateKind x == ObjKindObj OHaskell) (worldObjects world)
+  where subjects = getSubjects (rules world) TYou
+        youList = filter (\obj -> objStateKind obj `elem` (map (liftObjState . text2Object) subjects)) (worldObjects world)
         movableList = nub $ concatMap (getMovableList (worldObjects world) (rules world) d) youList
         unmovableList = (worldObjects world) \\ movableList
 
