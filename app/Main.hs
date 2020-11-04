@@ -48,6 +48,8 @@ data Rule = Rule
   , ruleC :: Text
   }
 
+instance Show Rule where
+  show (Rule s v c) = " " ++ (intercalate " " $ map (tail . show) [s,v,c])
 
 data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
 
@@ -92,8 +94,8 @@ pickPicture (_, _, _, x) ObjRight = x
 drawWorld :: World -> IO Picture
 drawWorld world = do
 --    let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-    let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world) M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-    return (pictures (objPictures ++ [gridLinePicture world]))
+  let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world) M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
+  return (pictures (objPictures ++ [gridLinePicture world]))
 
 -----------------------------------
 -- updateWorld関連
@@ -101,18 +103,20 @@ drawWorld world = do
 
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
 updateWorld :: Event -> World -> IO World
-updateWorld (EventKey key ks _ _) world = return $ updateWorldWithKey key ks world
-updateWorld (EventMotion _)       world = return world
-updateWorld (EventResize _)       world = return world
+updateWorld (EventKey key Down _ _) world = do
+  let w = updateWorldWithKey key world
+  putStrLn $ show (rules w)
+  return w
+updateWorld _ world = return world
 
-updateWorldWithKey :: Key -> KeyState -> World -> World
-updateWorldWithKey key ks world = case (getDirection key ks) of
+updateWorldWithKey :: Key -> World -> World
+updateWorldWithKey key world = case (getDirection key) of
                                     Just dir -> newWorld
-                                      where newWorld = walk dir (updateRule world)
+                                      where newWorld = updateRule $ walk dir world
                                     Nothing -> world
 
 updateRule :: World -> World
-updateRule world = world {rules = (concatMap (getRules texts) is_list)}
+updateRule world = world {rules = concatMap (getRules texts) is_list}
   where is_list :: [ObjState]
         is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
 
@@ -169,7 +173,7 @@ getMovableList objects rules dir you = case obj of
                                               pushable = isText || isPush
   where x = objStateX you
         y = objStateY you
-        obj = trace "findObjectInWalk" (findObject objects (updateXY x y dir))
+        obj = findObject objects (updateXY x y dir)
 
 
 getSubjects :: [Rule] -> Text -> [Text]
@@ -182,19 +186,19 @@ updateXY x y ObjUp    = (x, y+1)
 updateXY x y ObjRight = (x+1, y)
 
 findObject :: [ObjState] -> (Int,Int) -> Maybe ObjState
-findObject objects (x,y) = trace "findObject" (find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects)
+findObject objects (x,y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
 
 -- | 方向キーとWASDキーに対応して四角形を移動させる
-getDirection :: Key -> KeyState -> Maybe Direction
-getDirection (SpecialKey KeyLeft)  Down = Just ObjLeft
-getDirection (SpecialKey KeyDown)  Down = Just ObjDown
-getDirection (SpecialKey KeyUp)    Down = Just ObjUp
-getDirection (SpecialKey KeyRight) Down = Just ObjRight
-getDirection (Char 'a')            Down = Just ObjLeft
-getDirection (Char 's')            Down = Just ObjDown
-getDirection (Char 'w')            Down = Just ObjUp
-getDirection (Char 'd')            Down = Just ObjRight
-getDirection _ _ = Nothing
+getDirection :: Key -> Maybe Direction
+getDirection (SpecialKey KeyLeft) = Just ObjLeft
+getDirection (SpecialKey KeyDown) = Just ObjDown
+getDirection (SpecialKey KeyUp)   = Just ObjUp
+getDirection (SpecialKey KeyRight)= Just ObjRight
+getDirection (Char 'a')           = Just ObjLeft
+getDirection (Char 's')           = Just ObjDown
+getDirection (Char 'w')           = Just ObjUp
+getDirection (Char 'd')           = Just ObjRight
+getDirection _ = Nothing
 
 -----------------------------------
 -- nextWorld関連
@@ -246,7 +250,7 @@ initWorld = do
   obj_images <- mapM loadObjImage (objs ++ texts)
   let size = (33, 18)
   let walls = [ObjState x y ObjRight (ObjKindObj OWall) False | x <- [11..21], y <- [6, 10]]
-  return World {
+  return $ updateRule $ World {
     gridLinePicture = gridLines size,
     imageMap = M.fromList obj_images,
     worldObjects = [ObjState 11 12 ObjRight (ObjKindText THaskell) True,
