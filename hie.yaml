@@ -1,7 +1,5 @@
 cradle:
   stack:
-    stackYaml: stack-hls.yaml
-    components:
     - path: "./src"
       component: "gloss-tutorial:lib"
 
