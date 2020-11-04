@@ -150,8 +150,7 @@ updateRule world = world {rules = concatMap (getRules texts) is_list}
 
 walk :: Direction -> World -> World
 walk d world = world { worldObjects = unmovableList ++ (map (stepObject d) movableList) }
-  where subjects = getSubjects (rules world) TYou
-        youList = filter (\obj -> objStateKind obj `elem` (map (liftObjState . text2Object) subjects)) (worldObjects world)
+  where youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
         movableList = nub $ concatMap (getMovableList (worldObjects world) (rules world) d) youList
         unmovableList = (worldObjects world) \\ movableList
 
@@ -160,18 +159,21 @@ stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
   where (newX, newY) = updateXY (objStateX obj) (objStateY obj) d
 
 getMovableList :: [ObjState] -> [Rule] -> Direction -> ObjState -> [ObjState]
-getMovableList objects rules dir you = case obj of
-                                    Nothing -> [you]
-                                    Just a ->
-                                      if pushable
-                                        then if (movableList == []) then [] else you:movableList
-                                        else []
-                                        where movableList = getMovableList objects rules dir a
-                                              isPush = (objStateKind a) `elem` (map liftObjState $ map text2Object $ getSubjects rules TPush)
-                                              isText = case (objStateKind a) of
-                                                ObjKindText _ -> True
-                                                ObjKindObj _ -> False
-                                              pushable = isText || isPush
+getMovableList objects rules dir you =
+  case obj of
+    Nothing -> [you]
+    Just a ->
+      case (pushable, stop) of
+        (True, _) -> if (movableList == []) then [] else you:movableList
+        (False, True) -> []
+        (False, False) -> [you]
+        where movableList = getMovableList objects rules dir a
+              isPush = a `elem` (getObjStatesWithComplement TPush rules objects)
+              isText = case (objStateKind a) of
+                ObjKindText _ -> True
+                ObjKindObj _ -> False
+              pushable = isText || isPush
+              stop = a `elem` (getObjStatesWithComplement TStop rules objects)
   where x = objStateX you
         y = objStateY you
         obj = findObject objects (updateXY x y dir)
@@ -179,6 +181,11 @@ getMovableList objects rules dir you = case obj of
 
 getSubjects :: [Rule] -> Text -> [Text]
 getSubjects rules c = map ruleS $ filter (\rule -> (ruleC rule) == c) rules
+
+getObjStatesWithComplement :: Text -> [Rule] -> [ObjState] -> [ObjState]
+getObjStatesWithComplement c rules objects = filter (\obj -> objStateKind obj `elem` (map (liftObjState . text2Object) subjects)) objects
+  where subjects = getSubjects rules c
+
 
 updateXY :: Int -> Int -> Direction -> (Int, Int)
 updateXY x y ObjLeft  = (x-1, y)
