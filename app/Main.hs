@@ -72,7 +72,7 @@ instance ObjKindInterface Object where
   liftObjState obj = ObjKindObj obj
 
 data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
-data Text = THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord, Read)
+data Text = TText | THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord, Read)
 data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord, Read)
 
 text2Object :: Text -> Object
@@ -115,8 +115,11 @@ updateWorldWithKey key world = case (getDirection key) of
                                       where newWorld = updateRule $ walk dir world
                                     Nothing -> world
 
+defaultRule :: [Rule]
+defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
+  
 updateRule :: World -> World
-updateRule world = world {rules = concatMap (getRules texts) is_list}
+updateRule world = world {rules = concatMap (getRules texts) is_list ++ defaultRule}
   where is_list :: [ObjState]
         is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
 
@@ -158,33 +161,59 @@ stepObject :: Direction -> ObjState -> ObjState
 stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
   where (newX, newY) = updateXY (objStateX obj) (objStateY obj) d
 
+data Collision = STOP | PUSH | THROUGH deriving Eq
+
 getMovableList :: [ObjState] -> [Rule] -> Direction -> ObjState -> [ObjState]
-getMovableList objects rules dir you =
-  case obj of
-    Nothing -> [you]
-    Just a ->
-      case (pushable, stop) of
-        (True, _) -> if (movableList == []) then [] else you:movableList
-        (False, True) -> []
-        (False, False) -> [you]
-        where movableList = getMovableList objects rules dir a
-              isPush = a `elem` (getObjStatesWithComplement TPush rules objects)
-              isText = case (objStateKind a) of
-                ObjKindText _ -> True
-                ObjKindObj _ -> False
-              pushable = isText || isPush
-              stop = a `elem` (getObjStatesWithComplement TStop rules objects)
-  where x = objStateX you
-        y = objStateY you
-        obj = findObject objects (updateXY x y dir)
+getMovableList objects rules dir you
+  | canMove objects rules dir (updateXY x y dir) = getMovableList' objects rules dir [you]
+  | otherwise = []
+  where
+    x = objStateX you
+    y = objStateX you
+    canMove objects rules dir (x, y) =
+      case getCellCollision objects rules (x, y) of
+        PUSH -> canMove objects rules dir $ updateXY x y dir
+        STOP -> False
+        THROUGH -> True
+    getMovableList' objects rules dir pushedObjs =
+      case collisionState of
+        PUSH -> pushedObjs ++ movableList
+        THROUGH -> pushedObjs
+      where x = objStateX $ head pushedObjs
+            y = objStateY $ head pushedObjs
+            newPos = updateXY x y dir
+            movableList = getMovableList' objects rules dir pushList
+            pushList = filter (\obj -> getObjectCollision rules obj == PUSH) $ findObjects objects newPos
+            collisionState = getCellCollision objects rules newPos
+    
+    getCellCollision objects rules pos
+      | STOP `elem` objectStates = STOP
+      | PUSH `elem` objectStates = PUSH
+      | otherwise = THROUGH
+      where objectStates = map (getObjectCollision rules) $ findObjects objects pos
+
+    getObjectCollision :: [Rule] -> ObjState -> Collision
+    getObjectCollision rules obj = 
+      case (isPush, isStop) of
+        (True, _) -> PUSH
+        (False, True) -> STOP
+        (False, False) -> THROUGH
+      where isPush = obj `elem` getObjStatesWithComplement TPush rules objects
+            isStop = obj `elem` getObjStatesWithComplement TStop rules objects
 
 
 getSubjects :: [Rule] -> Text -> [Text]
 getSubjects rules c = map ruleS $ filter (\rule -> (ruleC rule) == c) rules
 
 getObjStatesWithComplement :: Text -> [Rule] -> [ObjState] -> [ObjState]
-getObjStatesWithComplement c rules objects = filter (\obj -> objStateKind obj `elem` (map (liftObjState . text2Object) subjects)) objects
+getObjStatesWithComplement c rules objects = filter (\obj -> objStateKind obj `elem` objKindList) objects
   where subjects = getSubjects rules c
+        subjectsWithoutText = subjects \\ [TText]
+        objKindObjList = map (liftObjState . text2Object) subjectsWithoutText
+        objKindTextList = map liftObjState textSubjects
+        objKindList = objKindObjList ++ objKindTextList
+        textSubjects = if TText `elem` subjects then allTexts else []
+        allTexts = generateEnumValues :: [Text]
 
 
 updateXY :: Int -> Int -> Direction -> (Int, Int)
@@ -195,6 +224,9 @@ updateXY x y ObjRight = (x+1, y)
 
 findObject :: [ObjState] -> (Int,Int) -> Maybe ObjState
 findObject objects (x,y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
+
+findObjects :: [ObjState] -> (Int,Int) -> [ObjState]
+findObjects objects (x,y) = filter (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
 
 -- | 方向キーとWASDキーに対応して四角形を移動させる
 getDirection :: Key -> Maybe Direction
@@ -238,12 +270,12 @@ gridLines (w, h) = pictures $
         leftStart = left + offsetWidth
         bottomStart = bottom + offsetHeight
 
+generateEnumValues :: (Enum a) => [a]
+generateEnumValues = enumFrom (toEnum 0)
 
 initWorld :: IO World
 initWorld = do
-  let generateEnumValues :: (Enum a) => [a]
-      generateEnumValues = enumFrom (toEnum 0)
-      objectToObjKindObjObj :: Object -> ObjKind
+  let objectToObjKindObjObj :: Object -> ObjKind
       objectToObjKindObjObj a = ObjKindObj a
       objectToObjKindTextText :: Text -> ObjKind
       objectToObjKindTextText a = ObjKindText a
