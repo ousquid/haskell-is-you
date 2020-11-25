@@ -63,7 +63,8 @@ data ObjState = ObjState
     objStateY :: Int,
     objStateDir :: Direction,
     objStateKind :: ObjKind,
-    objStateIText :: Bool
+    objStateIText :: Bool,
+    objStateId :: Int
   }
   deriving (Show, Eq)
 
@@ -307,25 +308,29 @@ initWorld = do
         { gridLinePicture = gridLines size,
           imageMap = M.fromList obj_images,
           worldObjects =
-            [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
-              ObjState 12 12 ObjRight (ObjKindText TIs) True,
-              ObjState 13 12 ObjRight (ObjKindText TYou) True,
-              ObjState 19 12 ObjRight (ObjKindText TFlag) True,
-              ObjState 20 12 ObjRight (ObjKindText TIs) True,
-              ObjState 21 12 ObjRight (ObjKindText TWin) True,
-              ObjState 16 9 ObjRight (ObjKindObj ORock) False,
-              ObjState 16 8 ObjRight (ObjKindObj ORock) False,
-              ObjState 16 7 ObjRight (ObjKindObj ORock) False,
-              ObjState 11 4 ObjRight (ObjKindText TWall) True,
-              ObjState 12 4 ObjRight (ObjKindText TIs) True,
-              ObjState 13 4 ObjRight (ObjKindText TStop) True,
-              ObjState 19 4 ObjRight (ObjKindText TRock) True,
-              ObjState 20 4 ObjRight (ObjKindText TIs) True,
-              ObjState 21 4 ObjRight (ObjKindText TPush) True,
-              ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
-              ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
-            ]
-              ++ walls,
+            zipWith
+              (\g x -> g x)
+              ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
+                  ObjState 12 12 ObjRight (ObjKindText TIs) True,
+                  ObjState 13 12 ObjRight (ObjKindText TYou) True,
+                  ObjState 19 12 ObjRight (ObjKindText TFlag) True,
+                  ObjState 20 12 ObjRight (ObjKindText TIs) True,
+                  ObjState 21 12 ObjRight (ObjKindText TWin) True,
+                  ObjState 16 9 ObjRight (ObjKindObj ORock) False,
+                  ObjState 16 8 ObjRight (ObjKindObj ORock) False,
+                  ObjState 16 7 ObjRight (ObjKindObj ORock) False,
+                  ObjState 11 4 ObjRight (ObjKindText TWall) True,
+                  ObjState 12 4 ObjRight (ObjKindText TIs) True,
+                  ObjState 13 4 ObjRight (ObjKindText TStop) True,
+                  ObjState 19 4 ObjRight (ObjKindText TRock) True,
+                  ObjState 20 4 ObjRight (ObjKindText TIs) True,
+                  ObjState 21 4 ObjRight (ObjKindText TPush) True,
+                  ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
+                  ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
+                ]
+                  ++ walls
+              )
+              [1 ..],
           worldSize = size,
           rules = []
         }
