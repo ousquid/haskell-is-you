@@ -79,7 +79,17 @@ instance ObjKindInterface Object where
 
 data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
 
+nounList = [THaskell, TRock, TWall, TFlag, TText]
+
+adjectiveList = [TWin, TStop, TPush, TYou]
+
 data Text = TText | THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord, Read)
+
+--data PartOfSpeech = Noun | Adjective
+--getPartOfSpeech :: Text -> PartOfSpeech
+--getPartOfSpeech text
+--  | text `elem` NounList = Noun
+--  | text `elem` [] = Adjective
 
 data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord, Read)
 
@@ -121,15 +131,19 @@ updateWorldWithKey :: Key -> World -> World
 updateWorldWithKey key world = case (getDirection key) of
   Just dir -> newWorld
     where
-      newWorld = updateRule $ walk dir world
+      newWorld = metamorphose $ updateRule $ walk dir world
   Nothing -> world
+
+metamorphose :: World -> World
+metamorphose world = world
 
 defaultRule :: [Rule]
 defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
 
 updateRule :: World -> World
-updateRule world = world {rules = concatMap (getRules texts) is_list ++ defaultRule}
+updateRule world = world {rules = filter validRule (concatMap (getRules texts) is_list) ++ defaultRule}
   where
+    validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
     is_list :: [ObjState]
     is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
 
