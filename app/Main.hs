@@ -8,6 +8,7 @@ import Debug.Trace
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Juicy
+import System.Exit
 
 -------------------
 -- Display の設定
@@ -51,7 +52,7 @@ data Rule = Rule
   { ruleS :: Text,
     ruleV :: Text,
     ruleC :: Text
-  }
+  } deriving (Eq)
 
 instance Show Rule where
   show (Rule s v c) = " " ++ (intercalate " " $ map (tail . show) [s, v, c])
@@ -119,12 +120,19 @@ drawWorld world = do
 -- updateWorld関連
 -----------------------------------
 
+win :: World -> Bool
+win world = not (null (map obj2position youList `intersect` map obj2position winList))
+  where 
+    youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
+    winList = getObjStatesWithComplement TWin (rules world) (worldObjects world)
+    obj2position obj = (objStateX obj, objStateY obj)
+
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
 updateWorld :: Event -> World -> IO World
 updateWorld (EventKey key Down _ _) world = do
   let w = updateWorldWithKey key world
-  putStrLn $ show (rules w)
-  return w
+  print (rules w)
+  if win w then exitSuccess else return w
 updateWorld _ world = return world
 
 updateWorldWithKey :: Key -> World -> World
@@ -133,6 +141,8 @@ updateWorldWithKey key world = case (getDirection key) of
     where
       newWorld = metamorphose $ updateRule $ walk dir world
   Nothing -> world
+
+
 
 assignID :: [ObjState] -> [ObjState]
 assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 .. ]
