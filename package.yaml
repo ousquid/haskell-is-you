@@ -38,6 +38,7 @@ executables:
     - gloss-juicy
     - gloss-tutorial
     - containers
+    - random
 
 tests:
   gloss-tutorial-test:

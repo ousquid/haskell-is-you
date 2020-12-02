@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 60b5288811f59364cb6e69835dd71cfb02b3d665104f68bdbcbb83280ee1f74a
+-- hash: 66818fcaa1ea9c48d80e376de6b9e411c1388540ae8949e2673de7197c2d35fe
 
 name:           gloss-tutorial
 version:        0.1.0.0
@@ -49,6 +49,7 @@ executable gloss-tutorial-exe
     , gloss
     , gloss-juicy
     , gloss-tutorial
+    , random
   default-language: Haskell2010
 
 test-suite gloss-tutorial-test

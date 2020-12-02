@@ -134,8 +134,16 @@ updateWorldWithKey key world = case (getDirection key) of
       newWorld = metamorphose $ updateRule $ walk dir world
   Nothing -> world
 
+assignID :: [ObjState] -> [ObjState]
+assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 .. ]
+
 metamorphose :: World -> World
-metamorphose world = world
+metamorphose world = world { worldObjects = assignID $ removedObjs ++ metamonObjs}
+  where metamonRules = filter isMetamonRule (rules world)
+        isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
+        metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
+        applyMetamon rules obj = [ obj { objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- rules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
+        removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
 
 defaultRule :: [Rule]
 defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
