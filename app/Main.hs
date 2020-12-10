@@ -52,7 +52,8 @@ data Rule = Rule
   { ruleS :: Text,
     ruleV :: Text,
     ruleC :: Text
-  } deriving (Eq)
+  }
+  deriving (Eq)
 
 instance Show Rule where
   show (Rule s v c) = " " ++ (intercalate " " $ map (tail . show) [s, v, c])
@@ -122,7 +123,7 @@ drawWorld world = do
 
 win :: World -> Bool
 win world = not (null (map obj2position youList `intersect` map obj2position winList))
-  where 
+  where
     youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
     winList = getObjStatesWithComplement TWin (rules world) (worldObjects world)
     obj2position obj = (objStateX obj, objStateY obj)
@@ -142,18 +143,17 @@ updateWorldWithKey key world = case (getDirection key) of
       newWorld = metamorphose $ updateRule $ walk dir world
   Nothing -> world
 
-
-
 assignID :: [ObjState] -> [ObjState]
-assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 .. ]
+assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 ..]
 
 metamorphose :: World -> World
-metamorphose world = world { worldObjects = assignID $ removedObjs ++ metamonObjs}
-  where metamonRules = filter isMetamonRule (rules world)
-        isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
-        metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
-        applyMetamon rules obj = [ obj { objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- rules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
-        removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
+metamorphose world = world {worldObjects = assignID $ removedObjs ++ metamonObjs}
+  where
+    metamonRules = filter isMetamonRule (rules world)
+    isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
+    metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
+    applyMetamon rules obj = [obj {objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- rules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
+    removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
 
 defaultRule :: [Rule]
 defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
@@ -287,14 +287,8 @@ getDirection _ = Nothing
 -----------------------------------
 -- nextWorld関連
 -----------------------------------
-nextBox :: Float -> ObjState -> ObjState
-nextBox dt box =
-  let x = objStateX box
-      y = objStateY box
-   in box {objStateX = x, objStateY = y}
-
 nextWorld :: Float -> World -> IO World
-nextWorld dt world = return world {worldObjects = map (nextBox dt) (worldObjects world)}
+nextWorld dt world = return world
 
 -----------------------------------
 -- initWorld関連
