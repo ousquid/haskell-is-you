@@ -1,5 +1,3 @@
-module Main where
-
 import Data.Char
 import Data.List
 import qualified Data.Map.Strict as M
@@ -43,10 +41,13 @@ type PictureRight = Picture
 data World = World
   { gridLinePicture :: Picture,
     imageMap :: M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight),
-    worldObjects :: [ObjState],
+    worldObjectsList :: [[ObjState]],
     worldSize :: (WorldWidth, WorldHeight),
     rules :: [Rule]
   }
+
+worldObjects :: World -> [ObjState]
+worldObjects world = head $ worldObjectsList world
 
 data Rule = Rule
   { ruleS :: Text,
@@ -59,6 +60,8 @@ instance Show Rule where
   show (Rule s v c) = " " ++ (intercalate " " $ map (tail . show) [s, v, c])
 
 data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
+
+data FnKey = FnReverse | FnStep deriving (Show, Eq)
 
 data ObjState = ObjState
   { objStateX :: Int,
@@ -97,6 +100,12 @@ data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord, Re
 
 text2Object :: Text -> Object
 text2Object text = read $ "O" ++ (drop 1 $ show text)
+
+applyHead :: (a -> a) -> [a] -> [a]
+applyHead f (x : xs) = (f x) : xs
+
+changeHead :: a -> [a] -> [a]
+changeHead y (x : xs) = y : xs
 
 -----------------------------------
 -- drawWorld関連
@@ -140,14 +149,32 @@ updateWorldWithKey :: Key -> World -> World
 updateWorldWithKey key world = case (getDirection key) of
   Just dir -> newWorld
     where
-      newWorld = metamorphose $ updateRule $ walk dir world
-  Nothing -> world
+      newWorld = removeUncangedWorldObjects $ metamorphose $ updateRule $ walk dir $ duplicateWorldObjects world
+  Nothing -> case (getFnKey key) of
+    Just FnStep -> metamorphose $ updateRule $ duplicateWorldObjects world
+    Just FnReverse -> updateRule $ tailWorldObjects world
+    Nothing -> world
+
+removeUncangedWorldObjects :: World -> World
+removeUncangedWorldObjects world@(World _ _ (x : y : ys) _ _)
+  | x == y = world {worldObjectsList = y : ys}
+  | otherwise = world
+
+duplicateWorldObjects :: World -> World
+duplicateWorldObjects world@(World _ _ (x : y : _) _ _)
+  | x == y = world
+  | otherwise = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
+duplicateWorldObjects world = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
+
+tailWorldObjects :: World -> World
+tailWorldObjects world@(World _ _ (x : []) _ _) = world
+tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
 
 assignID :: [ObjState] -> [ObjState]
 assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 ..]
 
 metamorphose :: World -> World
-metamorphose world = world {worldObjects = assignID $ removedObjs ++ metamonObjs}
+metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObjs ++ metamonObjs) (worldObjectsList world)}
   where
     metamonRules = filter isMetamonRule (rules world)
     isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
@@ -192,11 +219,12 @@ updateRule world = world {rules = filter validRule (concatMap (getRules texts) i
           return txt
 
 walk :: Direction -> World -> World
-walk d world = world {worldObjects = unmovableList ++ (map (stepObject d) movableList)}
+walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList world)}
   where
     youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
     movableList = nub $ concatMap (getMovableList (worldObjects world) (rules world) d) youList
     unmovableList = (worldObjects world) \\ movableList
+    newObjects = unmovableList ++ (map (stepObject d) movableList)
 
 stepObject :: Direction -> ObjState -> ObjState
 stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
@@ -284,6 +312,11 @@ getDirection (Char 'w') = Just ObjUp
 getDirection (Char 'd') = Just ObjRight
 getDirection _ = Nothing
 
+getFnKey :: Key -> Maybe FnKey
+getFnKey (Char 'f') = Just FnStep
+getFnKey (Char 'b') = Just FnReverse
+getFnKey _ = Nothing
+
 -----------------------------------
 -- nextWorld関連
 -----------------------------------
@@ -333,30 +366,31 @@ initWorld = do
       World
         { gridLinePicture = gridLines size,
           imageMap = M.fromList obj_images,
-          worldObjects =
-            zipWith
-              (\g x -> g x)
-              ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
-                  ObjState 12 12 ObjRight (ObjKindText TIs) True,
-                  ObjState 13 12 ObjRight (ObjKindText TYou) True,
-                  ObjState 19 12 ObjRight (ObjKindText TFlag) True,
-                  ObjState 20 12 ObjRight (ObjKindText TIs) True,
-                  ObjState 21 12 ObjRight (ObjKindText TWin) True,
-                  ObjState 16 9 ObjRight (ObjKindObj ORock) False,
-                  ObjState 16 8 ObjRight (ObjKindObj ORock) False,
-                  ObjState 16 7 ObjRight (ObjKindObj ORock) False,
-                  ObjState 11 4 ObjRight (ObjKindText TWall) True,
-                  ObjState 12 4 ObjRight (ObjKindText TIs) True,
-                  ObjState 13 4 ObjRight (ObjKindText TStop) True,
-                  ObjState 19 4 ObjRight (ObjKindText TRock) True,
-                  ObjState 20 4 ObjRight (ObjKindText TIs) True,
-                  ObjState 21 4 ObjRight (ObjKindText TPush) True,
-                  ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
-                  ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
-                ]
-                  ++ walls
-              )
-              [1 ..],
+          worldObjectsList =
+            [ zipWith
+                (\g x -> g x)
+                ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
+                    ObjState 12 12 ObjRight (ObjKindText TIs) True,
+                    ObjState 13 12 ObjRight (ObjKindText TYou) True,
+                    ObjState 19 12 ObjRight (ObjKindText TFlag) True,
+                    ObjState 20 12 ObjRight (ObjKindText TIs) True,
+                    ObjState 21 12 ObjRight (ObjKindText TWin) True,
+                    ObjState 16 9 ObjRight (ObjKindObj ORock) False,
+                    ObjState 16 8 ObjRight (ObjKindObj ORock) False,
+                    ObjState 16 7 ObjRight (ObjKindObj ORock) False,
+                    ObjState 11 4 ObjRight (ObjKindText TWall) True,
+                    ObjState 12 4 ObjRight (ObjKindText TIs) True,
+                    ObjState 13 4 ObjRight (ObjKindText TStop) True,
+                    ObjState 19 4 ObjRight (ObjKindText TRock) True,
+                    ObjState 20 4 ObjRight (ObjKindText TIs) True,
+                    ObjState 21 4 ObjRight (ObjKindText TPush) True,
+                    ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
+                    ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
+                  ]
+                    ++ walls
+                )
+                [1 ..]
+            ],
           worldSize = size,
           rules = []
         }
