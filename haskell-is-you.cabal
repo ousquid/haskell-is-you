@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8f1a0e06f197f40a340555dc88f00f4a15b3014085fd84f88fb622bc985ef6e7
+-- hash: 727026dea1eaa5502ecfc6b1ea455ebe5aed1154845c24e23be182196cc9e7ff
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -27,13 +27,16 @@ source-repository head
 
 library
   exposed-modules:
-      Key
+      Keyboard
+      World
   other-modules:
       Paths_haskell_is_you
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
+    , containers
+    , gloss
   default-language: Haskell2010
 
 executable haskell-is-you-exe

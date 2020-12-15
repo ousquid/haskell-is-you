@@ -1,10 +1,11 @@
-import Key
+import World
+import Keyboard
 
 import Data.Char
 import Data.List
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Debug.Trace ()
+import Debug.Trace
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Juicy
@@ -13,7 +14,6 @@ import System.Exit
 -------------------
 -- Display の設定
 -------------------
-
 window :: (Int, Int) -> Display
 window (w, h) = InWindow "Haskell Is You" (w * objWidth, h * objHeight) (0, 0)
 
@@ -28,69 +28,19 @@ objHeight = 64
 objImgScale :: Float
 objImgScale = objWidth / 320
 
-type WorldHeight = Int
 
-type WorldWidth = Int
 
-type PictureLeft = Picture
 
-type PictureDown = Picture
-
-type PictureUp = Picture
-
-type PictureRight = Picture
-
-data World = World
-  { gridLinePicture :: Picture,
-    imageMap :: M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight),
-    worldObjectsList :: [[ObjState]],
-    worldSize :: (WorldWidth, WorldHeight),
-    rules :: [Rule]
-  }
 
 worldObjects :: World -> [ObjState]
 worldObjects world = head $ worldObjectsList world
 
-data Rule = Rule
-  { ruleS :: Text,
-    ruleV :: Text,
-    ruleC :: Text
-  }
-  deriving (Eq)
 
-instance Show Rule where
-  show (Rule s v c) = " " ++ (intercalate " " $ map (tail . show) [s, v, c])
-
-data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)
-
-data FnKey = FnReverse | FnStep deriving (Show, Eq)
-
-data ObjState = ObjState
-  { objStateX :: Int,
-    objStateY :: Int,
-    objStateDir :: Direction,
-    objStateKind :: ObjKind,
-    objStateIText :: Bool,
-    objStateId :: Int
-  }
-  deriving (Show, Eq)
-
-class ObjKindInterface a where
-  liftObjState :: a -> ObjKind
-
-instance ObjKindInterface Text where
-  liftObjState text = ObjKindText text
-
-instance ObjKindInterface Object where
-  liftObjState obj = ObjKindObj obj
-
-data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
 
 nounList = [THaskell, TRock, TWall, TFlag, TText]
 
 adjectiveList = [TWin, TStop, TPush, TYou]
 
-data Text = TText | THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TIs | TYou deriving (Eq, Show, Enum, Ord, Read)
 
 --data PartOfSpeech = Noun | Adjective
 --getPartOfSpeech :: Text -> PartOfSpeech
@@ -98,7 +48,6 @@ data Text = TText | THaskell | TRock | TWall | TFlag | TWin | TStop | TPush | TI
 --  | text `elem` NounList = Noun
 --  | text `elem` [] = Adjective
 
-data Object = OHaskell | ORock | OWall | OFlag deriving (Eq, Show, Enum, Ord, Read)
 
 text2Object :: Text -> Object
 text2Object text = read $ "O" ++ (drop 1 $ show text)
@@ -147,15 +96,7 @@ updateWorld (EventKey key Down _ _) world = do
   if win w then exitSuccess else return w
 updateWorld _ world = return world
 
-updateWorldWithKey :: Key -> World -> World
-updateWorldWithKey key world = case (getDirection key) of
-  Just dir -> newWorld
-    where
-      newWorld = removeUncangedWorldObjects $ metamorphose $ updateRule $ walk dir $ duplicateWorldObjects world
-  Nothing -> case (getFnKey key) of
-    Just FnStep -> metamorphose $ updateRule $ duplicateWorldObjects world
-    Just FnReverse -> updateRule $ tailWorldObjects world
-    Nothing -> world
+
 
 removeUncangedWorldObjects :: World -> World
 removeUncangedWorldObjects world@(World _ _ (x : y : ys) _ _)
@@ -319,6 +260,15 @@ getFnKey (Char 'f') = Just FnStep
 getFnKey (Char 'b') = Just FnReverse
 getFnKey _ = Nothing
 
+updateWorldWithKey :: Key -> World -> World
+updateWorldWithKey key world = case (getDirection key) of
+  Just dir -> newWorld
+    where
+      newWorld = removeUncangedWorldObjects $ metamorphose $ updateRule $ walk dir $ duplicateWorldObjects world
+  Nothing -> case (getFnKey key) of
+    Just FnStep -> metamorphose $ updateRule $ duplicateWorldObjects world
+    Just FnReverse -> updateRule $ tailWorldObjects world
+    Nothing -> world
 -----------------------------------
 -- nextWorld関連
 -----------------------------------
