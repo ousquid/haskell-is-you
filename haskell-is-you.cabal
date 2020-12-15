@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 66818fcaa1ea9c48d80e376de6b9e411c1388540ae8949e2673de7197c2d35fe
+-- hash: 8f1a0e06f197f40a340555dc88f00f4a15b3014085fd84f88fb622bc985ef6e7
 
-name:           gloss-tutorial
+name:           haskell-is-you
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/gloss-tutorial#readme>
-homepage:       https://github.com/githubuser/gloss-tutorial#readme
-bug-reports:    https://github.com/githubuser/gloss-tutorial/issues
+description:    Please see the README on GitHub at <https://github.com/githubuser/haskell-is-you#readme>
+homepage:       https://github.com/githubuser/haskell-is-you#readme
+bug-reports:    https://github.com/githubuser/haskell-is-you/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2020 Author name here
@@ -23,23 +23,23 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/gloss-tutorial
+  location: https://github.com/githubuser/haskell-is-you
 
 library
   exposed-modules:
-      Lib
+      Key
   other-modules:
-      Paths_gloss_tutorial
+      Paths_haskell_is_you
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable gloss-tutorial-exe
+executable haskell-is-you-exe
   main-is: Main.hs
   other-modules:
-      Paths_gloss_tutorial
+      Paths_haskell_is_you
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -48,19 +48,19 @@ executable gloss-tutorial-exe
     , containers
     , gloss
     , gloss-juicy
-    , gloss-tutorial
+    , haskell-is-you
     , random
   default-language: Haskell2010
 
-test-suite gloss-tutorial-test
+test-suite haskell-is-you-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_gloss_tutorial
+      Paths_haskell_is_you
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , gloss-tutorial
+    , haskell-is-you
   default-language: Haskell2010

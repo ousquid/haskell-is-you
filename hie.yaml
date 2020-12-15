@@ -1,13 +1,13 @@
 cradle:
   stack:
     - path: "./src"
-      component: "gloss-tutorial:lib"
+      component: "haskell-is-you:key"
 
     - path: "./app/Main.hs"
-      component: "gloss-tutorial:exe:gloss-tutorial-exe"
+      component: "haskell-is-you:exe:haskell-is-you-exe"
 
-    - path: "./app/Paths_gloss_tutorial.hs"
-      component: "gloss-tutorial:exe:gloss-tutorial-exe"
+    - path: "./app/Paths_haskell_is_you.hs"
+      component: "haskell-is-you:exe:haskell-is-you-exe"
 
     - path: "./test"
-      component: "gloss-tutorial:test:gloss-tutorial-test"
+      component: "haskell-is-you:test:haskell-is-you-test"

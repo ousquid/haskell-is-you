@@ -1,3 +1,3 @@
-# Changelog for gloss-tutorial
+# Changelog for haskell-is-you
 
 ## Unreleased changes

@@ -13,7 +13,7 @@ import System.Exit
 -------------------
 
 window :: (Int, Int) -> Display
-window (w, h) = InWindow "Hello World" (w * objWidth, h * objHeight) (0, 0)
+window (w, h) = InWindow "Haskell Is You" (w * objWidth, h * objHeight) (0, 0)
 
 --------------------------
 -- シミュレーションの実装
