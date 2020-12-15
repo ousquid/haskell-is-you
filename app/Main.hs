@@ -404,7 +404,7 @@ loadObjImage kind = do
   return (kind, (left, down, up, right))
 
 loadPicture :: ObjKind -> Direction -> IO (Maybe Picture)
-loadPicture kind dir = loadJuicy ((last $ words $ show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".png")
+loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".png")
 
 -----------------------------------
 -- main 関数
