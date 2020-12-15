@@ -1,7 +1,7 @@
 cradle:
   stack:
     - path: "./src"
-      component: "haskell-is-you:key"
+      component: "haskell-is-you:lib"
 
     - path: "./app/Main.hs"
       component: "haskell-is-you:exe:haskell-is-you-exe"
