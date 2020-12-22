@@ -1,6 +1,3 @@
-import World
-import Keyboard
-
 import Data.Char
 import Data.List
 import qualified Data.Map.Strict as M
@@ -9,7 +6,10 @@ import Debug.Trace
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Juicy
+import Keyboard
+import Rule
 import System.Exit
+import World
 
 -------------------
 -- Display の設定
@@ -28,26 +28,11 @@ objHeight = 64
 objImgScale :: Float
 objImgScale = objWidth / 320
 
-
-
-
-
-worldObjects :: World -> [ObjState]
-worldObjects world = head $ worldObjectsList world
-
-
-
-nounList = [THaskell, TRock, TWall, TFlag, TText]
-
-adjectiveList = [TWin, TStop, TPush, TYou]
-
-
 --data PartOfSpeech = Noun | Adjective
 --getPartOfSpeech :: Text -> PartOfSpeech
 --getPartOfSpeech text
 --  | text `elem` NounList = Noun
 --  | text `elem` [] = Adjective
-
 
 text2Object :: Text -> Object
 text2Object text = read $ "O" ++ (drop 1 $ show text)
@@ -84,33 +69,31 @@ drawWorld world = do
 win :: World -> Bool
 win world = not (null (map obj2position youList `intersect` map obj2position winList))
   where
-    youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
-    winList = getObjStatesWithComplement TWin (rules world) (worldObjects world)
+    youList = getObjStatesWithComplement TYou (getRules world) (worldObjects world)
+    winList = getObjStatesWithComplement TWin (getRules world) (worldObjects world)
     obj2position obj = (objStateX obj, objStateY obj)
 
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
 updateWorld :: Event -> World -> IO World
 updateWorld (EventKey key Down _ _) world = do
   let w = updateWorldWithKey key world
-  print (rules w)
+  print (getRules w)
   if win w then exitSuccess else return w
 updateWorld _ world = return world
 
-
-
 removeUncangedWorldObjects :: World -> World
-removeUncangedWorldObjects world@(World _ _ (x : y : ys) _ _)
+removeUncangedWorldObjects world@(World _ _ (x : y : ys) _)
   | x == y = world {worldObjectsList = y : ys}
   | otherwise = world
 
 duplicateWorldObjects :: World -> World
-duplicateWorldObjects world@(World _ _ (x : y : _) _ _)
+duplicateWorldObjects world@(World _ _ (x : y : _) _)
   | x == y = world
   | otherwise = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
 duplicateWorldObjects world = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
 
 tailWorldObjects :: World -> World
-tailWorldObjects world@(World _ _ (x : []) _ _) = world
+tailWorldObjects world@(World _ _ (x : []) _) = world
 tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
 
 assignID :: [ObjState] -> [ObjState]
@@ -119,53 +102,17 @@ assignID objs = zipWith (\obj id -> obj {objStateId = id}) objs [1 ..]
 metamorphose :: World -> World
 metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObjs ++ metamonObjs) (worldObjectsList world)}
   where
-    metamonRules = filter isMetamonRule (rules world)
+    metamonRules = filter isMetamonRule (getRules world)
     isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
     metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
-    applyMetamon rules obj = [obj {objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- rules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
+    applyMetamon getRules obj = [obj {objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- getRules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
     removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
-
-defaultRule :: [Rule]
-defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
-
-updateRule :: World -> World
-updateRule world = world {rules = filter validRule (concatMap (getRules texts) is_list) ++ defaultRule}
-  where
-    validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
-    is_list :: [ObjState]
-    is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
-
-    getText :: ObjState -> [ObjState] -- ObjStateがTextならそのものを、ObjStateがObjectなら空を返す
-    getText obj = case (objStateKind obj) of
-      ObjKindText _ -> [obj]
-      ObjKindObj _ -> []
-    texts = concatMap getText (worldObjects world)
-    getRules :: [ObjState] -> ObjState -> [Rule]
-    getRules texts is = verticalRule ++ horizontalRule
-      where
-        x = objStateX is
-        y = objStateY is
-        upObj = findText texts (x, y + 1)
-        downObj = findText texts (x, y -1)
-        verticalRule = createRule upObj downObj
-        leftObj = findText texts (x -1, y)
-        rightObj = findText texts (x + 1, y)
-        horizontalRule = createRule leftObj rightObj
-
-        createRule sObj cObj = case (sObj, cObj) of
-          (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
-          otherwise -> []
-        findText :: [ObjState] -> (Int, Int) -> Maybe Text
-        findText objects (x, y) = do
-          obj <- findObject objects (x, y)
-          let ObjKindText txt = objStateKind obj
-          return txt
 
 walk :: Direction -> World -> World
 walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList world)}
   where
-    youList = getObjStatesWithComplement TYou (rules world) (worldObjects world)
-    movableList = nub $ concatMap (getMovableList (worldObjects world) (rules world) d) youList
+    youList = getObjStatesWithComplement TYou (getRules world) (worldObjects world)
+    movableList = nub $ concatMap (getMovableList (worldObjects world) (getRules world) d) youList
     unmovableList = (worldObjects world) \\ movableList
     newObjects = unmovableList ++ (map (stepObject d) movableList)
 
@@ -177,18 +124,18 @@ stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
 data Collision = STOP | PUSH | THROUGH deriving (Eq)
 
 getMovableList :: [ObjState] -> [Rule] -> Direction -> ObjState -> [ObjState]
-getMovableList objects rules dir you
-  | canMove objects rules dir (updateXY x y dir) = getMovableList' objects rules dir [you]
+getMovableList objects getRules dir you
+  | canMove objects getRules dir (updateXY x y dir) = getMovableList' objects getRules dir [you]
   | otherwise = []
   where
     x = objStateX you
     y = objStateY you
-    canMove objects rules dir (x, y) =
-      case getCellCollision objects rules (x, y) of
-        PUSH -> canMove objects rules dir $ updateXY x y dir
+    canMove objects getRules dir (x, y) =
+      case getCellCollision objects getRules (x, y) of
+        PUSH -> canMove objects getRules dir $ updateXY x y dir
         STOP -> False
         THROUGH -> True
-    getMovableList' objects rules dir pushedObjs =
+    getMovableList' objects getRules dir pushedObjs =
       case collisionState of
         PUSH -> pushedObjs ++ movableList
         THROUGH -> pushedObjs
@@ -196,34 +143,34 @@ getMovableList objects rules dir you
         x = objStateX $ head pushedObjs
         y = objStateY $ head pushedObjs
         newPos = updateXY x y dir
-        movableList = getMovableList' objects rules dir pushList
-        pushList = filter (\obj -> getObjectCollision rules obj == PUSH) $ findObjects objects newPos
-        collisionState = getCellCollision objects rules newPos
+        movableList = getMovableList' objects getRules dir pushList
+        pushList = filter (\obj -> getObjectCollision getRules obj == PUSH) $ findObjects objects newPos
+        collisionState = getCellCollision objects getRules newPos
 
-    getCellCollision objects rules pos
+    getCellCollision objects getRules pos
       | STOP `elem` objectStates = STOP
       | PUSH `elem` objectStates = PUSH
       | otherwise = THROUGH
       where
-        objectStates = map (getObjectCollision rules) $ findObjects objects pos
+        objectStates = map (getObjectCollision getRules) $ findObjects objects pos
 
     getObjectCollision :: [Rule] -> ObjState -> Collision
-    getObjectCollision rules obj =
+    getObjectCollision getRules obj =
       case (isPush, isStop) of
         (True, _) -> PUSH
         (False, True) -> STOP
         (False, False) -> THROUGH
       where
-        isPush = obj `elem` getObjStatesWithComplement TPush rules objects
-        isStop = obj `elem` getObjStatesWithComplement TStop rules objects
+        isPush = obj `elem` getObjStatesWithComplement TPush getRules objects
+        isStop = obj `elem` getObjStatesWithComplement TStop getRules objects
 
 getSubjects :: [Rule] -> Text -> [Text]
-getSubjects rules c = map ruleS $ filter (\rule -> (ruleC rule) == c) rules
+getSubjects getRules c = map ruleS $ filter (\rule -> (ruleC rule) == c) getRules
 
 getObjStatesWithComplement :: Text -> [Rule] -> [ObjState] -> [ObjState]
-getObjStatesWithComplement c rules objects = filter (\obj -> objStateKind obj `elem` objKindList) objects
+getObjStatesWithComplement c getRules objects = filter (\obj -> objStateKind obj `elem` objKindList) objects
   where
-    subjects = getSubjects rules c
+    subjects = getSubjects getRules c
     subjectsWithoutText = subjects \\ [TText]
     objKindObjList = map (liftObjState . text2Object) subjectsWithoutText
     objKindTextList = map liftObjState textSubjects
@@ -236,9 +183,6 @@ updateXY x y ObjLeft = (x -1, y)
 updateXY x y ObjDown = (x, y -1)
 updateXY x y ObjUp = (x, y + 1)
 updateXY x y ObjRight = (x + 1, y)
-
-findObject :: [ObjState] -> (Int, Int) -> Maybe ObjState
-findObject objects (x, y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
 
 findObjects :: [ObjState] -> (Int, Int) -> [ObjState]
 findObjects objects (x, y) = filter (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
@@ -264,11 +208,12 @@ updateWorldWithKey :: Key -> World -> World
 updateWorldWithKey key world = case (getDirection key) of
   Just dir -> newWorld
     where
-      newWorld = removeUncangedWorldObjects $ metamorphose $ updateRule $ walk dir $ duplicateWorldObjects world
+      newWorld = removeUncangedWorldObjects $ metamorphose $ walk dir $ duplicateWorldObjects world
   Nothing -> case (getFnKey key) of
-    Just FnStep -> metamorphose $ updateRule $ duplicateWorldObjects world
-    Just FnReverse -> updateRule $ tailWorldObjects world
+    Just FnStep -> metamorphose $ duplicateWorldObjects world
+    Just FnReverse -> tailWorldObjects world
     Nothing -> world
+
 -----------------------------------
 -- nextWorld関連
 -----------------------------------
@@ -314,38 +259,36 @@ initWorld = do
   let size = (33, 18)
   let walls = [ObjState x y ObjRight (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
   return $
-    updateRule $
-      World
-        { gridLinePicture = gridLines size,
-          imageMap = M.fromList obj_images,
-          worldObjectsList =
-            [ zipWith
-                (\g x -> g x)
-                ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
-                    ObjState 12 12 ObjRight (ObjKindText TIs) True,
-                    ObjState 13 12 ObjRight (ObjKindText TYou) True,
-                    ObjState 19 12 ObjRight (ObjKindText TFlag) True,
-                    ObjState 20 12 ObjRight (ObjKindText TIs) True,
-                    ObjState 21 12 ObjRight (ObjKindText TWin) True,
-                    ObjState 16 9 ObjRight (ObjKindObj ORock) False,
-                    ObjState 16 8 ObjRight (ObjKindObj ORock) False,
-                    ObjState 16 7 ObjRight (ObjKindObj ORock) False,
-                    ObjState 11 4 ObjRight (ObjKindText TWall) True,
-                    ObjState 12 4 ObjRight (ObjKindText TIs) True,
-                    ObjState 13 4 ObjRight (ObjKindText TStop) True,
-                    ObjState 19 4 ObjRight (ObjKindText TRock) True,
-                    ObjState 20 4 ObjRight (ObjKindText TIs) True,
-                    ObjState 21 4 ObjRight (ObjKindText TPush) True,
-                    ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
-                    ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
-                  ]
-                    ++ walls
-                )
-                [1 ..]
-            ],
-          worldSize = size,
-          rules = []
-        }
+    World
+      { gridLinePicture = gridLines size,
+        imageMap = M.fromList obj_images,
+        worldObjectsList =
+          [ zipWith
+              (\g x -> g x)
+              ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
+                  ObjState 12 12 ObjRight (ObjKindText TIs) True,
+                  ObjState 13 12 ObjRight (ObjKindText TYou) True,
+                  ObjState 19 12 ObjRight (ObjKindText TFlag) True,
+                  ObjState 20 12 ObjRight (ObjKindText TIs) True,
+                  ObjState 21 12 ObjRight (ObjKindText TWin) True,
+                  ObjState 16 9 ObjRight (ObjKindObj ORock) False,
+                  ObjState 16 8 ObjRight (ObjKindObj ORock) False,
+                  ObjState 16 7 ObjRight (ObjKindObj ORock) False,
+                  ObjState 11 4 ObjRight (ObjKindText TWall) True,
+                  ObjState 12 4 ObjRight (ObjKindText TIs) True,
+                  ObjState 13 4 ObjRight (ObjKindText TStop) True,
+                  ObjState 19 4 ObjRight (ObjKindText TRock) True,
+                  ObjState 20 4 ObjRight (ObjKindText TIs) True,
+                  ObjState 21 4 ObjRight (ObjKindText TPush) True,
+                  ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
+                  ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
+                ]
+                  ++ walls
+              )
+              [1 ..]
+          ],
+        worldSize = size
+      }
 
 loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
