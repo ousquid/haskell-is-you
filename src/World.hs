@@ -5,7 +5,6 @@ module World
     Object (..),
     WorldWidth,
     WorldHeight,
-    Direction (..),
     ObjKind (..),
     PictureLeft,
     PictureDown,
@@ -19,6 +18,7 @@ where
 
 import Data.List (find, intercalate)
 import qualified Data.Map.Strict as M
+import qualified Direction as D
 import Graphics.Gloss (Picture)
 import Object (Object (..))
 import Rule (Rule (..), adjectiveList, nounList)
@@ -88,7 +88,7 @@ findObject objects (x, y) = find (\obj -> x == (objStateX obj) && y == (objState
 data ObjState = ObjState
   { objStateX :: Int,
     objStateY :: Int,
-    objStateDir :: Direction,
+    objStateDir :: D.Direction,
     objStateKind :: ObjKind,
     objStateIText :: Bool,
     objStateId :: Int
@@ -105,5 +105,3 @@ instance ObjKindInterface Object where
   liftObjState obj = ObjKindObj obj
 
 data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
-
-data Direction = ObjLeft | ObjDown | ObjUp | ObjRight deriving (Show, Eq)

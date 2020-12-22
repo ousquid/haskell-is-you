@@ -3,6 +3,7 @@ import Data.List
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Debug.Trace
+import qualified Direction as D
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Juicy
@@ -50,11 +51,11 @@ changeHead y (x : xs) = y : xs
 drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
 drawObj (width, height) obj picture = translate ((fromIntegral $ (objStateX obj) - width `div` 2) * objWidth) ((fromIntegral $ (objStateY obj) - height `div` 2) * objHeight) $ scale objImgScale objImgScale picture
 
-pickPicture :: (Picture, Picture, Picture, Picture) -> Direction -> Picture
-pickPicture (x, _, _, _) ObjLeft = x
-pickPicture (_, x, _, _) ObjDown = x
-pickPicture (_, _, x, _) ObjUp = x
-pickPicture (_, _, _, x) ObjRight = x
+pickPicture :: (Picture, Picture, Picture, Picture) -> D.Direction -> Picture
+pickPicture (x, _, _, _) D.Left = x
+pickPicture (_, x, _, _) D.Down = x
+pickPicture (_, _, x, _) D.Up = x
+pickPicture (_, _, _, x) D.Right = x
 
 drawWorld :: World -> IO Picture
 drawWorld world = do
@@ -74,12 +75,21 @@ win world = not (null (map obj2position youList `intersect` map obj2position win
     obj2position obj = (objStateX obj, objStateY obj)
 
 -- | イベントを処理する関数。EventKey以外のイベントは無視する
-updateWorld :: Event -> World -> IO World
-updateWorld (EventKey key Down _ _) world = do
-  let w = updateWorldWithKey key world
+handleEvent :: Event -> World -> IO World
+handleEvent (EventKey key Down _ _) world = do
+  let w = updateWorld key world
   print (getRules w)
   if win w then exitSuccess else return w
-updateWorld _ world = return world
+handleEvent _ world = return world
+
+updateWorld :: Key -> World -> World
+updateWorld key world = case action of
+  Move dir -> removeUncangedWorldObjects $ metamorphose $ walk dir $ duplicateWorldObjects world
+  Step -> metamorphose $ duplicateWorldObjects world
+  Reverse -> tailWorldObjects world
+  DoNothing -> world
+  where
+    action = keyToAction key
 
 removeUncangedWorldObjects :: World -> World
 removeUncangedWorldObjects world@(World _ _ (x : y : ys) _)
@@ -108,7 +118,7 @@ metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObj
     applyMetamon getRules obj = [obj {objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- getRules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
     removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
 
-walk :: Direction -> World -> World
+walk :: D.Direction -> World -> World
 walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList world)}
   where
     youList = getObjStatesWithComplement TYou (getRules world) (worldObjects world)
@@ -116,14 +126,14 @@ walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList
     unmovableList = (worldObjects world) \\ movableList
     newObjects = unmovableList ++ (map (stepObject d) movableList)
 
-stepObject :: Direction -> ObjState -> ObjState
+stepObject :: D.Direction -> ObjState -> ObjState
 stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
   where
     (newX, newY) = updateXY (objStateX obj) (objStateY obj) d
 
 data Collision = STOP | PUSH | THROUGH deriving (Eq)
 
-getMovableList :: [ObjState] -> [Rule] -> Direction -> ObjState -> [ObjState]
+getMovableList :: [ObjState] -> [Rule] -> D.Direction -> ObjState -> [ObjState]
 getMovableList objects getRules dir you
   | canMove objects getRules dir (updateXY x y dir) = getMovableList' objects getRules dir [you]
   | otherwise = []
@@ -178,41 +188,14 @@ getObjStatesWithComplement c getRules objects = filter (\obj -> objStateKind obj
     textSubjects = if TText `elem` subjects then allTexts else []
     allTexts = generateEnumValues :: [Text]
 
-updateXY :: Int -> Int -> Direction -> (Int, Int)
-updateXY x y ObjLeft = (x -1, y)
-updateXY x y ObjDown = (x, y -1)
-updateXY x y ObjUp = (x, y + 1)
-updateXY x y ObjRight = (x + 1, y)
+updateXY :: Int -> Int -> D.Direction -> (Int, Int)
+updateXY x y D.Left = (x -1, y)
+updateXY x y D.Down = (x, y -1)
+updateXY x y D.Up = (x, y + 1)
+updateXY x y D.Right = (x + 1, y)
 
 findObjects :: [ObjState] -> (Int, Int) -> [ObjState]
 findObjects objects (x, y) = filter (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
-
--- | 方向キーとWASDキーに対応して四角形を移動させる
-getDirection :: Key -> Maybe Direction
-getDirection (SpecialKey KeyLeft) = Just ObjLeft
-getDirection (SpecialKey KeyDown) = Just ObjDown
-getDirection (SpecialKey KeyUp) = Just ObjUp
-getDirection (SpecialKey KeyRight) = Just ObjRight
-getDirection (Char 'a') = Just ObjLeft
-getDirection (Char 's') = Just ObjDown
-getDirection (Char 'w') = Just ObjUp
-getDirection (Char 'd') = Just ObjRight
-getDirection _ = Nothing
-
-getFnKey :: Key -> Maybe FnKey
-getFnKey (Char 'f') = Just FnStep
-getFnKey (Char 'b') = Just FnReverse
-getFnKey _ = Nothing
-
-updateWorldWithKey :: Key -> World -> World
-updateWorldWithKey key world = case (getDirection key) of
-  Just dir -> newWorld
-    where
-      newWorld = removeUncangedWorldObjects $ metamorphose $ walk dir $ duplicateWorldObjects world
-  Nothing -> case (getFnKey key) of
-    Just FnStep -> metamorphose $ duplicateWorldObjects world
-    Just FnReverse -> tailWorldObjects world
-    Nothing -> world
 
 -----------------------------------
 -- nextWorld関連
@@ -257,7 +240,7 @@ initWorld = do
       texts = map objectToObjKindTextText (generateEnumValues :: [Text])
   obj_images <- mapM loadObjImage (objs ++ texts)
   let size = (33, 18)
-  let walls = [ObjState x y ObjRight (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
+  let walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
   return $
     World
       { gridLinePicture = gridLines size,
@@ -265,23 +248,23 @@ initWorld = do
         worldObjectsList =
           [ zipWith
               (\g x -> g x)
-              ( [ ObjState 11 12 ObjRight (ObjKindText THaskell) True,
-                  ObjState 12 12 ObjRight (ObjKindText TIs) True,
-                  ObjState 13 12 ObjRight (ObjKindText TYou) True,
-                  ObjState 19 12 ObjRight (ObjKindText TFlag) True,
-                  ObjState 20 12 ObjRight (ObjKindText TIs) True,
-                  ObjState 21 12 ObjRight (ObjKindText TWin) True,
-                  ObjState 16 9 ObjRight (ObjKindObj ORock) False,
-                  ObjState 16 8 ObjRight (ObjKindObj ORock) False,
-                  ObjState 16 7 ObjRight (ObjKindObj ORock) False,
-                  ObjState 11 4 ObjRight (ObjKindText TWall) True,
-                  ObjState 12 4 ObjRight (ObjKindText TIs) True,
-                  ObjState 13 4 ObjRight (ObjKindText TStop) True,
-                  ObjState 19 4 ObjRight (ObjKindText TRock) True,
-                  ObjState 20 4 ObjRight (ObjKindText TIs) True,
-                  ObjState 21 4 ObjRight (ObjKindText TPush) True,
-                  ObjState 12 8 ObjRight (ObjKindObj OHaskell) False,
-                  ObjState 20 8 ObjLeft (ObjKindObj OFlag) False
+              ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,
+                  ObjState 12 12 D.Right (ObjKindText TIs) True,
+                  ObjState 13 12 D.Right (ObjKindText TYou) True,
+                  ObjState 19 12 D.Right (ObjKindText TFlag) True,
+                  ObjState 20 12 D.Right (ObjKindText TIs) True,
+                  ObjState 21 12 D.Right (ObjKindText TWin) True,
+                  ObjState 16 9 D.Right (ObjKindObj ORock) False,
+                  ObjState 16 8 D.Right (ObjKindObj ORock) False,
+                  ObjState 16 7 D.Right (ObjKindObj ORock) False,
+                  ObjState 11 4 D.Right (ObjKindText TWall) True,
+                  ObjState 12 4 D.Right (ObjKindText TIs) True,
+                  ObjState 13 4 D.Right (ObjKindText TStop) True,
+                  ObjState 19 4 D.Right (ObjKindText TRock) True,
+                  ObjState 20 4 D.Right (ObjKindText TIs) True,
+                  ObjState 21 4 D.Right (ObjKindText TPush) True,
+                  ObjState 12 8 D.Right (ObjKindObj OHaskell) False,
+                  ObjState 20 8 D.Left (ObjKindObj OFlag) False
                 ]
                   ++ walls
               )
@@ -292,14 +275,14 @@ initWorld = do
 
 loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
-  Just left <- loadPicture kind ObjLeft
-  Just down <- loadPicture kind ObjDown
-  Just up <- loadPicture kind ObjUp
-  Just right <- loadPicture kind ObjRight
+  Just left <- loadPicture kind D.Left
+  Just down <- loadPicture kind D.Down
+  Just up <- loadPicture kind D.Up
+  Just right <- loadPicture kind D.Right
   return (kind, (left, down, up, right))
 
-loadPicture :: ObjKind -> Direction -> IO (Maybe Picture)
-loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (drop 3 $ show dir) ++ ".png")
+loadPicture :: ObjKind -> D.Direction -> IO (Maybe Picture)
+loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (show dir) ++ ".png")
 
 -----------------------------------
 -- main 関数
@@ -308,4 +291,4 @@ loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" +
 main :: IO ()
 main = do
   world <- initWorld
-  playIO (window $ worldSize world) black 24 world drawWorld updateWorld nextWorld
+  playIO (window $ worldSize world) black 24 world drawWorld handleEvent nextWorld
