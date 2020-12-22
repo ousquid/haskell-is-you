@@ -200,8 +200,8 @@ findObjects objects (x, y) = filter (\obj -> x == (objStateX obj) && y == (objSt
 -----------------------------------
 -- nextWorld関連
 -----------------------------------
-nextWorld :: Float -> World -> IO World
-nextWorld dt world = return world
+elapseWorld :: Float -> World -> IO World
+elapseWorld dt world = return world
 
 -----------------------------------
 -- initWorld関連
@@ -291,4 +291,4 @@ loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" +
 main :: IO ()
 main = do
   world <- initWorld
-  playIO (window $ worldSize world) black 24 world drawWorld handleEvent nextWorld
+  playIO (window $ worldSize world) black 24 world drawWorld handleEvent elapseWorld
