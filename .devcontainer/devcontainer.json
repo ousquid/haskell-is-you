@@ -1,0 +1,9 @@
+{
+    "name": "haskell-is-you",
+    "dockerFile": "Dockerfile",
+    "containerUser": "haskell",
+    "extensions": [
+        "haskell.haskell",
+        "ms-vsliveshare.vsliveshare"
+    ]
+}
