@@ -9,6 +9,6 @@ RUN groupadd --gid $USER_GID $USERNAME \
 
 RUN apt update && apt install -y libghc-opengl-dev freeglut3-dev
 
-ARG DISPLAY=host.docker.internal:0.0
+ENV DISPLAY=host.docker.internal:0.0
 
 USER $USERNAME
