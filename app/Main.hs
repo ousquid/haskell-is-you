@@ -224,54 +224,40 @@ gridLines (w, h) =
 generateEnumValues :: (Enum a) => [a]
 generateEnumValues = enumFrom (toEnum 0)
 
-initWorld :: IO World
-initWorld = do
-  let objectToObjKindObjObj :: Object -> ObjKind
-      objectToObjKindObjObj a = ObjKindObj a
-      objectToObjKindTextText :: Text -> ObjKind
-      objectToObjKindTextText a = ObjKindText a
-
-      --obj_images <- loadObjImage OHaskell
-      --haskell_images <- loadObjImage THaskell
-      --is_images <- loadObjImage TIs
-      --you_images <- loadObjImage TYou
-      -- obj_images <- mapM loadObjImage (generateEnumValues :: [ObjKind])
-      objs = map objectToObjKindObjObj (generateEnumValues :: [Object])
-      texts = map objectToObjKindTextText (generateEnumValues :: [Text])
-  obj_images <- mapM loadObjImage (objs ++ texts)
+initWorld :: [(ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))] -> World
+initWorld obj_images =
   let size = (33, 18)
-  let walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
-  return $
-    World
-      { gridLinePicture = gridLines size,
-        imageMap = M.fromList obj_images,
-        worldObjectsList =
-          [ zipWith
-              (\g x -> g x)
-              ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,
-                  ObjState 12 12 D.Right (ObjKindText TIs) True,
-                  ObjState 13 12 D.Right (ObjKindText TYou) True,
-                  ObjState 19 12 D.Right (ObjKindText TFlag) True,
-                  ObjState 20 12 D.Right (ObjKindText TIs) True,
-                  ObjState 21 12 D.Right (ObjKindText TWin) True,
-                  ObjState 16 9 D.Right (ObjKindObj ORock) False,
-                  ObjState 16 8 D.Right (ObjKindObj ORock) False,
-                  ObjState 16 7 D.Right (ObjKindObj ORock) False,
-                  ObjState 11 4 D.Right (ObjKindText TWall) True,
-                  ObjState 12 4 D.Right (ObjKindText TIs) True,
-                  ObjState 13 4 D.Right (ObjKindText TStop) True,
-                  ObjState 19 4 D.Right (ObjKindText TRock) True,
-                  ObjState 20 4 D.Right (ObjKindText TIs) True,
-                  ObjState 21 4 D.Right (ObjKindText TPush) True,
-                  ObjState 12 8 D.Right (ObjKindObj OHaskell) False,
-                  ObjState 20 8 D.Left (ObjKindObj OFlag) False
-                ]
-                  ++ walls
-              )
-              [1 ..]
-          ],
-        worldSize = size
-      }
+      walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
+   in World
+        { gridLinePicture = gridLines size,
+          imageMap = M.fromList obj_images,
+          worldObjectsList =
+            [ zipWith
+                (\g x -> g x)
+                ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,
+                    ObjState 12 12 D.Right (ObjKindText TIs) True,
+                    ObjState 13 12 D.Right (ObjKindText TYou) True,
+                    ObjState 19 12 D.Right (ObjKindText TFlag) True,
+                    ObjState 20 12 D.Right (ObjKindText TIs) True,
+                    ObjState 21 12 D.Right (ObjKindText TWin) True,
+                    ObjState 16 9 D.Right (ObjKindObj ORock) False,
+                    ObjState 16 8 D.Right (ObjKindObj ORock) False,
+                    ObjState 16 7 D.Right (ObjKindObj ORock) False,
+                    ObjState 11 4 D.Right (ObjKindText TWall) True,
+                    ObjState 12 4 D.Right (ObjKindText TIs) True,
+                    ObjState 13 4 D.Right (ObjKindText TStop) True,
+                    ObjState 19 4 D.Right (ObjKindText TRock) True,
+                    ObjState 20 4 D.Right (ObjKindText TIs) True,
+                    ObjState 21 4 D.Right (ObjKindText TPush) True,
+                    ObjState 12 8 D.Right (ObjKindObj OHaskell) False,
+                    ObjState 20 8 D.Left (ObjKindObj OFlag) False
+                  ]
+                    ++ walls
+                )
+                [1 ..]
+            ],
+          worldSize = size
+        }
 
 loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
@@ -290,5 +276,8 @@ loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" +
 
 main :: IO ()
 main = do
-  world <- initWorld
+  let objs = map liftObjState (generateEnumValues :: [Object])
+      texts = map liftObjState (generateEnumValues :: [Text])
+  obj_images <- mapM loadObjImage (objs ++ texts)
+  let world = initWorld obj_images
   playIO (window $ worldSize world) black 24 world drawWorld handleEvent elapseWorld
