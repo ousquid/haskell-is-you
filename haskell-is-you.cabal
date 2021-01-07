@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5e6732ff6346ccf6e2b041a63aa24eec85cd64f9a312cf03f40a5a0063f72c2e
+-- hash: 8eee180f8a47189c858f4c19bb614dc39552d21fd1c607663e568dca184ade41
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -28,9 +28,11 @@ source-repository head
 library
   exposed-modules:
       Direction
+      Draw
       Keyboard
       Object
       Rule
+      Stage
       Text
       World
   other-modules:
@@ -41,6 +43,7 @@ library
       base >=4.7 && <5
     , containers
     , gloss
+    , gloss-juicy
   default-language: Haskell2010
 
 executable haskell-is-you-exe

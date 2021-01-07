@@ -4,36 +4,26 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Debug.Trace
 import qualified Direction as D
+import Draw
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Graphics.Gloss.Juicy
 import Keyboard
 import Rule
+import Stage
 import System.Exit
 import World
 
 -------------------
 -- Display の設定
 -------------------
-window :: (Int, Int) -> Display
-window (w, h) = InWindow "Haskell Is You" (w * objWidth, h * objHeight) (0, 0)
+
+window :: Display
+window = InWindow "Haskell Is You" (windowWidth, windowHeight) (0, 0)
 
 --------------------------
 -- シミュレーションの実装
 --------------------------
-
-objWidth, objHeight :: Num a => a
-objWidth = 64
-objHeight = 64
-
-objImgScale :: Float
-objImgScale = objWidth / 320
-
---data PartOfSpeech = Noun | Adjective
---getPartOfSpeech :: Text -> PartOfSpeech
---getPartOfSpeech text
---  | text `elem` NounList = Noun
---  | text `elem` [] = Adjective
 
 text2Object :: Text -> Object
 text2Object text = read $ "O" ++ (drop 1 $ show text)
@@ -43,25 +33,6 @@ applyHead f (x : xs) = (f x) : xs
 
 changeHead :: a -> [a] -> [a]
 changeHead y (x : xs) = y : xs
-
------------------------------------
--- drawWorld関連
------------------------------------
-
-drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
-drawObj (width, height) obj picture = translate ((fromIntegral $ (objStateX obj) - width `div` 2) * objWidth) ((fromIntegral $ (objStateY obj) - height `div` 2) * objHeight) $ scale objImgScale objImgScale picture
-
-pickPicture :: (Picture, Picture, Picture, Picture) -> D.Direction -> Picture
-pickPicture (x, _, _, _) D.Left = x
-pickPicture (_, x, _, _) D.Down = x
-pickPicture (_, _, x, _) D.Up = x
-pickPicture (_, _, _, x) D.Right = x
-
-drawWorld :: World -> IO Picture
-drawWorld world = do
-  --    let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-  let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world) M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-  return (pictures (objPictures ++ [gridLinePicture world]))
 
 -----------------------------------
 -- updateWorld関連
@@ -206,73 +177,8 @@ elapseWorld dt world = return world
 -----------------------------------
 -- initWorld関連
 -----------------------------------
-gridLines :: (Int, Int) -> Picture
-gridLines (w, h) =
-  pictures $
-    [color white $ line [(x, fromIntegral $ bottom), (x, fromIntegral $ top)] | x <- map fromIntegral [leftStart, leftStart + objWidth .. right]]
-      ++ [color white $ line [(fromIntegral $ left, y), (fromIntegral $ right, y)] | y <- map fromIntegral [bottomStart, bottomStart + objHeight .. top]]
-  where
-    offsetHeight = if (even h) then objHeight `div` 2 else 0
-    offsetWidth = if (even w) then objWidth `div` 2 else 0
-    top = (h * objHeight) `div` 2
-    bottom = - top
-    right = (w * objWidth) `div` 2
-    left = - right
-    leftStart = left + offsetWidth
-    bottomStart = bottom + offsetHeight
-
 generateEnumValues :: (Enum a) => [a]
 generateEnumValues = enumFrom (toEnum 0)
-
-initWorld :: [(ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))] -> World
-initWorld obj_images =
-  let size = (33, 18)
-      walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
-   in World
-        { gridLinePicture = gridLines size,
-          imageMap = M.fromList obj_images,
-          worldObjectsList =
-            [ zipWith
-                (\g x -> g x)
-                ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,
-                    ObjState 12 12 D.Right (ObjKindText TIs) True,
-                    ObjState 13 12 D.Right (ObjKindText TYou) True,
-                    ObjState 19 12 D.Right (ObjKindText TFlag) True,
-                    ObjState 20 12 D.Right (ObjKindText TIs) True,
-                    ObjState 21 12 D.Right (ObjKindText TWin) True,
-                    ObjState 16 9 D.Right (ObjKindObj ORock) False,
-                    ObjState 16 8 D.Right (ObjKindObj ORock) False,
-                    ObjState 16 7 D.Right (ObjKindObj ORock) False,
-                    ObjState 11 4 D.Right (ObjKindText TWall) True,
-                    ObjState 12 4 D.Right (ObjKindText TIs) True,
-                    ObjState 13 4 D.Right (ObjKindText TStop) True,
-                    ObjState 19 4 D.Right (ObjKindText TRock) True,
-                    ObjState 20 4 D.Right (ObjKindText TIs) True,
-                    ObjState 21 4 D.Right (ObjKindText TPush) True,
-                    ObjState 12 8 D.Right (ObjKindObj OHaskell) False,
-                    ObjState 20 8 D.Left (ObjKindObj OFlag) False
-                  ]
-                    ++ walls
-                )
-                [1 ..]
-            ],
-          worldSize = size
-        }
-
-loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
-loadObjImage kind = do
-  left <- loadPicture kind D.Left
-  down <- loadPicture kind D.Down
-  up <- loadPicture kind D.Up
-  right <- loadPicture kind D.Right
-  return (kind, (left, down, up, right))
-
-loadPicture :: ObjKind -> D.Direction -> IO Picture
-loadPicture kind dir = do
-  maybePic <- loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (show dir) ++ ".png")
-  return $ case maybePic of
-    Just img -> img
-    Nothing -> color red $ circleSolid 160
 
 -----------------------------------
 -- main 関数
@@ -284,4 +190,4 @@ main = do
       texts = map liftObjState (generateEnumValues :: [Text])
   obj_images <- mapM loadObjImage (objs ++ texts)
   let world = initWorld obj_images
-  playIO (window $ worldSize world) black 24 world drawWorld handleEvent elapseWorld
+  playIO window black 24 world drawWorld handleEvent elapseWorld
