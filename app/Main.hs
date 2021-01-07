@@ -261,14 +261,18 @@ initWorld obj_images =
 
 loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
-  Just left <- loadPicture kind D.Left
-  Just down <- loadPicture kind D.Down
-  Just up <- loadPicture kind D.Up
-  Just right <- loadPicture kind D.Right
+  left <- loadPicture kind D.Left
+  down <- loadPicture kind D.Down
+  up <- loadPicture kind D.Up
+  right <- loadPicture kind D.Right
   return (kind, (left, down, up, right))
 
-loadPicture :: ObjKind -> D.Direction -> IO (Maybe Picture)
-loadPicture kind dir = loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (show dir) ++ ".png")
+loadPicture :: ObjKind -> D.Direction -> IO Picture
+loadPicture kind dir = do
+  maybePic <- loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (show dir) ++ ".png")
+  return $ case maybePic of
+    Just img -> img
+    Nothing -> color red $ circleSolid 160
 
 -----------------------------------
 -- main 関数
