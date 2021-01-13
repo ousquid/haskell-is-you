@@ -29,8 +29,7 @@ type WorldHeight = Int
 type WorldWidth = Int
 
 data World = World
-  { worldObjectsList :: [[ObjState]],
-    worldSize :: (WorldWidth, WorldHeight)
+  { worldObjectsList :: [[ObjState]]
   }
 
 type PictureLeft = Picture

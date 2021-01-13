@@ -71,8 +71,7 @@ pickPicture (_, x, _, _) D.Down = x
 pickPicture (_, _, x, _) D.Up = x
 pickPicture (_, _, _, x) D.Right = x
 
-drawWorld :: M.Map ObjKind (PictureLeft, PictureDown, PictureUp , PictureRight) -> World -> IO Picture
-drawWorld obj_images world = do
-  --    let objPictures = [drawObj (worldSize world) obj $ pickPicture ((imageMap world)!!(fromEnum $ objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-  let objPictures = [drawObj (worldSize world) obj $ pickPicture (obj_images M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
-  return (pictures (objPictures ++ [gridLines $ worldSize world]))
+drawWorld :: (Int, Int) -> M.Map ObjKind (PictureLeft, PictureDown, PictureUp , PictureRight) -> World -> IO Picture
+drawWorld worldSize obj_images world = do
+  let objPictures = [drawObj worldSize obj $ pickPicture (obj_images M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
+  return (pictures (objPictures ++ [gridLines worldSize]))

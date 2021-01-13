@@ -63,18 +63,18 @@ updateWorld key world = case action of
     action = keyToAction key
 
 removeUncangedWorldObjects :: World -> World
-removeUncangedWorldObjects world@(World (x : y : ys) _)
+removeUncangedWorldObjects world@(World (x : y : ys))
   | x == y = world {worldObjectsList = y : ys}
   | otherwise = world
 
 duplicateWorldObjects :: World -> World
-duplicateWorldObjects world@(World (x : y : _) _)
+duplicateWorldObjects world@(World (x : y : _))
   | x == y = world
   | otherwise = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
 duplicateWorldObjects world = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
 
 tailWorldObjects :: World -> World
-tailWorldObjects world@(World (x : []) _) = world
+tailWorldObjects world@(World (x : [])) = world
 tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
 
 assignID :: [ObjState] -> [ObjState]
@@ -188,6 +188,7 @@ main :: IO ()
 main = do
   let objs = map liftObjState (generateEnumValues :: [Object])
       texts = map liftObjState (generateEnumValues :: [Text])
-  obj_images <- mapM loadObjImage (objs ++ texts)
+  objImages <- mapM loadObjImage (objs ++ texts)
   let world = initWorld -- obj_images
-  playIO window black 24 world (drawWorld $ M.fromList obj_images) handleEvent elapseWorld
+  let worldSize = (33, 18)
+  playIO window black 24 world (drawWorld worldSize $ M.fromList objImages) handleEvent elapseWorld

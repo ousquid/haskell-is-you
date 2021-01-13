@@ -38,6 +38,5 @@ initWorld =
                     ++ walls
                 )
                 [1 ..]
-            ],
-          worldSize = stageSize
+            ]
         }
