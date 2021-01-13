@@ -9,14 +9,12 @@ import Draw
 import Graphics.Gloss
 import World
 
-initWorld :: [(ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))] -> World
-initWorld obj_images =
+initWorld :: World
+initWorld =
   let stageSize = (33, 18)
       walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
    in World
-        { gridLinePicture = gridLines stageSize,
-          imageMap = M.fromList obj_images,
-          worldObjectsList =
+        { worldObjectsList =
             [ zipWith
                 (\g x -> g x)
                 ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,

@@ -29,9 +29,7 @@ type WorldHeight = Int
 type WorldWidth = Int
 
 data World = World
-  { gridLinePicture :: Picture,
-    imageMap :: M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight),
-    worldObjectsList :: [[ObjState]],
+  { worldObjectsList :: [[ObjState]],
     worldSize :: (WorldWidth, WorldHeight)
   }
 
