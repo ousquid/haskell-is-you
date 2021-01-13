@@ -8,35 +8,17 @@ import qualified Direction as D
 import Draw
 import Graphics.Gloss
 import World
+import Data.List.Split
 
-initWorld :: World
-initWorld =
-  let stageSize = (33, 18)
-      walls = [ObjState x y D.Right (ObjKindObj OWall) False | x <- [11 .. 21], y <- [6, 10]]
-   in World
-        { worldObjectsList =
-            [ zipWith
-                (\g x -> g x)
-                ( [ ObjState 11 12 D.Right (ObjKindText THaskell) True,
-                    ObjState 12 12 D.Right (ObjKindText TIs) True,
-                    ObjState 13 12 D.Right (ObjKindText TYou) True,
-                    ObjState 19 12 D.Right (ObjKindText TFlag) True,
-                    ObjState 20 12 D.Right (ObjKindText TIs) True,
-                    ObjState 21 12 D.Right (ObjKindText TWin) True,
-                    ObjState 16 9 D.Right (ObjKindObj ORock) False,
-                    ObjState 16 8 D.Right (ObjKindObj ORock) False,
-                    ObjState 16 7 D.Right (ObjKindObj ORock) False,
-                    ObjState 11 4 D.Right (ObjKindText TWall) True,
-                    ObjState 12 4 D.Right (ObjKindText TIs) True,
-                    ObjState 13 4 D.Right (ObjKindText TStop) True,
-                    ObjState 19 4 D.Right (ObjKindText TRock) True,
-                    ObjState 20 4 D.Right (ObjKindText TIs) True,
-                    ObjState 21 4 D.Right (ObjKindText TPush) True,
-                    ObjState 12 8 D.Right (ObjKindObj OHaskell) False,
-                    ObjState 20 8 D.Left (ObjKindObj OFlag) False
-                  ]
-                    ++ walls
-                )
-                [1 ..]
-            ]
-        }
+initWorld :: [String] -> World
+initWorld stage =
+  let objStates = map (stringToObjState . splitOn ",") stage
+  in World { worldObjectsList = [zipWith (\g x -> g x) objStates [1 ..]] }
+
+stringToObjState :: [String] -> (Int -> ObjState)
+stringToObjState (x:y:dir:kind:_) = ObjState _x _y _dir objKind isText
+  where isText = head kind == 'T'
+        _x = read x::Int 
+        _y = read y::Int
+        _dir = read dir::D.Direction 
+        objKind = if isText then liftObjKind (read kind::Text) else liftObjKind (read kind::Object)

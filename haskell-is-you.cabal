@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8eee180f8a47189c858f4c19bb614dc39552d21fd1c607663e568dca184ade41
+-- hash: 4685dc4e2673126cde5ae8068be449ea0e04b4129aa93c9e8bd703d35bb0aa55
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -44,6 +44,7 @@ library
     , containers
     , gloss
     , gloss-juicy
+    , split
   default-language: Haskell2010
 
 executable haskell-is-you-exe
@@ -59,7 +60,7 @@ executable haskell-is-you-exe
     , gloss
     , gloss-juicy
     , haskell-is-you
-    , random
+    , split
   default-language: Haskell2010
 
 test-suite haskell-is-you-test

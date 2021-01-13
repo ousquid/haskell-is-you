@@ -13,6 +13,8 @@ import Rule
 import Stage
 import System.Exit
 import World
+import System.Environment
+import Data.List.Split
 
 -------------------
 -- Display の設定
@@ -86,8 +88,8 @@ metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObj
     metamonRules = filter isMetamonRule (getRules world)
     isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
     metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
-    applyMetamon getRules obj = [obj {objStateKind = liftObjState $ text2Object (ruleC rule)} | rule <- getRules, liftObjState (text2Object (ruleS rule)) == objStateKind obj]
-    removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjState . text2Object . ruleS) metamonRules) (worldObjects world)
+    applyMetamon getRules obj = [obj {objStateKind = liftObjKind $ text2Object (ruleC rule)} | rule <- getRules, liftObjKind (text2Object (ruleS rule)) == objStateKind obj]
+    removedObjs = filter (\x -> objStateKind x `notElem` map (liftObjKind . text2Object . ruleS) metamonRules) (worldObjects world)
 
 walk :: D.Direction -> World -> World
 walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList world)}
@@ -153,8 +155,8 @@ getObjStatesWithComplement c getRules objects = filter (\obj -> objStateKind obj
   where
     subjects = getSubjects getRules c
     subjectsWithoutText = subjects \\ [TText]
-    objKindObjList = map (liftObjState . text2Object) subjectsWithoutText
-    objKindTextList = map liftObjState textSubjects
+    objKindObjList = map (liftObjKind . text2Object) subjectsWithoutText
+    objKindTextList = map liftObjKind textSubjects
     objKindList = objKindObjList ++ objKindTextList
     textSubjects = if TText `elem` subjects then allTexts else []
     allTexts = generateEnumValues :: [Text]
@@ -186,9 +188,13 @@ generateEnumValues = enumFrom (toEnum 0)
 
 main :: IO ()
 main = do
-  let objs = map liftObjState (generateEnumValues :: [Object])
-      texts = map liftObjState (generateEnumValues :: [Text])
+  let objs = map liftObjKind (generateEnumValues :: [Object])
+      texts = map liftObjKind (generateEnumValues :: [Text])
   objImages <- mapM loadObjImage (objs ++ texts)
-  let world = initWorld -- obj_images
-  let worldSize = (33, 18)
+  
+  
+  args <- getArgs
+  stage <- fmap words $ readFile $ head args
+  let worldSize = (\(x:y:_) -> (x, y)) $ map read $ splitOn "," $ head stage
+  let world = initWorld $ tail stage
   playIO window black 24 world (drawWorld worldSize $ M.fromList objImages) handleEvent elapseWorld

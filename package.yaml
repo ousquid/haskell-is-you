@@ -28,6 +28,7 @@ library:
   - gloss
   - gloss-juicy
   - containers
+  - split
 
 executables:
   haskell-is-you-exe:
@@ -42,7 +43,7 @@ executables:
     - gloss-juicy
     - haskell-is-you
     - containers
-    - random
+    - split
 
 tests:
   haskell-is-you-test:

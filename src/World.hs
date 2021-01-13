@@ -10,7 +10,7 @@ module World
     PictureDown,
     PictureUp,
     PictureRight,
-    liftObjState,
+    liftObjKind,
     worldObjects,
     getRules,
   )
@@ -93,12 +93,12 @@ data ObjState = ObjState
   deriving (Show, Eq)
 
 class ObjKindInterface a where
-  liftObjState :: a -> ObjKind
+  liftObjKind :: a -> ObjKind
 
 instance ObjKindInterface Text where
-  liftObjState text = ObjKindText text
+  liftObjKind text = ObjKindText text
 
 instance ObjKindInterface Object where
-  liftObjState obj = ObjKindObj obj
+  liftObjKind obj = ObjKindObj obj
 
 data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)

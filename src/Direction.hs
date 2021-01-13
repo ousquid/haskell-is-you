@@ -3,4 +3,4 @@ module Direction
   )
 where
 
-data Direction = Left | Down | Up | Right deriving (Show, Eq)
+data Direction = Left | Down | Up | Right deriving (Show, Read, Eq)
