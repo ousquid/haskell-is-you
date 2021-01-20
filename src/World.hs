@@ -1,7 +1,6 @@
 module World
   ( World (..),
     ObjState (..),
-    Text (..),
     Object (..),
     WorldWidth,
     WorldHeight,

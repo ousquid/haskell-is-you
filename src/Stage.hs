@@ -8,6 +8,7 @@ import qualified Data.Map as M
 import qualified Direction as D
 import Draw
 import Graphics.Gloss
+import Text
 import World
 
 initWorld :: (WorldWidth, WorldHeight) -> [String] -> World

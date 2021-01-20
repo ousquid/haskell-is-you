@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4685dc4e2673126cde5ae8068be449ea0e04b4129aa93c9e8bd703d35bb0aa55
+-- hash: 4a65bdae448bdf2b3329018de1c738745b03d494876b916b4f31f39d4a609766
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Action
       Direction
       Draw
       Keyboard
@@ -34,6 +35,7 @@ library
       Rule
       Stage
       Text
+      Util
       World
   other-modules:
       Paths_haskell_is_you
