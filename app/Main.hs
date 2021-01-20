@@ -96,8 +96,12 @@ walk d world = world {worldObjectsList = changeHead newObjects (worldObjectsList
   where
     youList = getObjStatesWithComplement TYou (getRules world) (worldObjects world)
     movableList = nub $ concatMap (getMovableList (worldObjects world) (getRules world) d) youList
-    unmovableList = (worldObjects world) \\ movableList
-    newObjects = unmovableList ++ (map (stepObject d) movableList)
+    samePositionList = worldObjects world \\ movableList
+    changeYourDirection x = if x `elem` youList then changeDirection d x else x
+    newObjects = map changeYourDirection $ samePositionList ++ map (stepObject d) movableList
+
+changeDirection :: D.Direction -> ObjState -> ObjState
+changeDirection d obj = obj {objStateDir = d}
 
 stepObject :: D.Direction -> ObjState -> ObjState
 stepObject d obj = obj {objStateX = newX, objStateY = newY, objStateDir = d}
