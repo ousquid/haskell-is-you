@@ -48,11 +48,11 @@ removeUncangedWorldObjects world@(World (x : y : ys))
 duplicateWorldObjects :: World -> World
 duplicateWorldObjects world@(World (x : y : _))
   | x == y = world
-  | otherwise = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
-duplicateWorldObjects world = world {worldObjectsList = (head $ worldObjectsList world) : (worldObjectsList world)}
+  | otherwise = world {worldObjectsList = head (worldObjectsList world) : worldObjectsList world}
+duplicateWorldObjects world = world {worldObjectsList = head (worldObjectsList world) : worldObjectsList world}
 
 tailWorldObjects :: World -> World
-tailWorldObjects world@(World (x : [])) = world
+tailWorldObjects world@(World [x]) = world
 tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
 
 -----------------------------------
@@ -62,7 +62,7 @@ window :: Display
 window = InWindow "Haskell Is You" (windowWidth, windowHeight) (0, 0)
 
 elapseWorld :: Float -> World -> IO World
-elapseWorld dt world = return world
+elapseWorld dt = return
 
 main :: IO ()
 main = do

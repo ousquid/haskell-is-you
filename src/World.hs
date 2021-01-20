@@ -27,7 +27,7 @@ type WorldHeight = Int
 
 type WorldWidth = Int
 
-data World = World
+newtype World = World
   { worldObjectsList :: [[ObjState]]
   }
 
@@ -53,10 +53,10 @@ getRules world = filter validRule (concatMap (getRules' texts) is_list) ++ defau
   where
     validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
     is_list :: [ObjState]
-    is_list = filter (\obj -> (objStateKind obj) == (ObjKindText TIs)) (worldObjects world)
+    is_list = filter (\obj -> objStateKind obj == ObjKindText TIs) (worldObjects world)
 
     getText :: ObjState -> [ObjState] -- ObjStateがTextならそのものを、ObjStateがObjectなら空を返す
-    getText obj = case (objStateKind obj) of
+    getText obj = case objStateKind obj of
       ObjKindText _ -> [obj]
       ObjKindObj _ -> []
     texts = concatMap getText (worldObjects world)
@@ -74,7 +74,7 @@ getRules world = filter validRule (concatMap (getRules' texts) is_list) ++ defau
 
         createRule sObj cObj = case (sObj, cObj) of
           (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
-          otherwise -> []
+          _ -> []
         findText :: [ObjState] -> (Int, Int) -> Maybe Text
         findText objects (x, y) = do
           obj <- findObject objects (x, y)
@@ -82,7 +82,7 @@ getRules world = filter validRule (concatMap (getRules' texts) is_list) ++ defau
           return txt
 
 findObject :: [ObjState] -> (Int, Int) -> Maybe ObjState
-findObject objects (x, y) = find (\obj -> x == (objStateX obj) && y == (objStateY obj)) objects
+findObject objects (x, y) = find (\obj -> x == objStateX obj && y == objStateY obj) objects
 
 data ObjState = ObjState
   { objStateX :: Int,

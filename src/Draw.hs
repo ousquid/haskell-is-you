@@ -38,7 +38,7 @@ loadObjImage kind = do
 
 loadPicture :: ObjKind -> D.Direction -> IO Picture
 loadPicture kind dir = do
-  maybePic <- loadJuicy ("imgs/" ++ (last $ words $ show kind) ++ "_" ++ (show dir) ++ ".png")
+  maybePic <- loadJuicy ("imgs/" ++ last (words $ show kind) ++ "_" ++ show dir ++ ".png")
   return $ case maybePic of
     Just img -> img
     Nothing -> color red $ circleSolid 160
@@ -46,11 +46,11 @@ loadPicture kind dir = do
 gridLines :: (Int, Int) -> Picture
 gridLines (stageWidth, stageHeight) =
   pictures $
-    [color white $ line [(x, fromIntegral $ bottom), (x, fromIntegral $ top)] | x <- map fromIntegral [leftStart, leftStart + objSize .. right]]
-      ++ [color white $ line [(fromIntegral $ left, y), (fromIntegral $ right, y)] | y <- map fromIntegral [bottomStart, bottomStart + objSize .. top]]
+    [color white $ line [(x, fromIntegral bottom), (x, fromIntegral top)] | x <- map fromIntegral [leftStart, leftStart + objSize .. right]]
+      ++ [color white $ line [(fromIntegral left, y), (fromIntegral right, y)] | y <- map fromIntegral [bottomStart, bottomStart + objSize .. top]]
   where
-    offsetHeight = if (even stageHeight) then objSize `div` 2 else 0
-    offsetWidth = if (even stageWidth) then objSize `div` 2 else 0
+    offsetHeight = if even stageHeight then objSize `div` 2 else 0
+    offsetWidth = if even stageWidth then objSize `div` 2 else 0
     top = (stageHeight * objSize) `div` 2
     bottom = - top
     right = (stageWidth * objSize) `div` 2
@@ -60,7 +60,7 @@ gridLines (stageWidth, stageHeight) =
     objSize = getObjSize (stageWidth, stageHeight)
 
 drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
-drawObj (width, height) obj picture = translate ((fromIntegral $ ((objStateX obj) - width `div` 2) * objSize)) ((fromIntegral $ ((objStateY obj) - height `div` 2) * objSize)) $ scale objScale objScale picture
+drawObj (width, height) obj picture = translate (fromIntegral $ (objStateX obj - width `div` 2) * objSize) (fromIntegral $ (objStateY obj - height `div` 2) * objSize) $ scale objScale objScale picture
   where
     objScale = objImgScale (width, height)
     objSize = getObjSize (width, height)
@@ -71,7 +71,7 @@ pickPicture (_, x, _, _) D.Down = x
 pickPicture (_, _, x, _) D.Up = x
 pickPicture (_, _, _, x) D.Right = x
 
-drawWorld :: (Int, Int) -> M.Map ObjKind (PictureLeft, PictureDown, PictureUp , PictureRight) -> World -> IO Picture
-drawWorld worldSize obj_images world = do
-  let objPictures = [drawObj worldSize obj $ pickPicture (obj_images M.! (objStateKind obj)) (objStateDir obj) | obj <- worldObjects world]
+drawWorld :: (Int, Int) -> M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
+drawWorld worldSize objImages world = do
+  let objPictures = [drawObj worldSize obj $ pickPicture (objImages M.! objStateKind obj) (objStateDir obj) | obj <- worldObjects world]
   return (pictures (objPictures ++ [gridLines worldSize]))
