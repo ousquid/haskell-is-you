@@ -1,5 +1,6 @@
 import Data.Char
 import Data.List
+import Data.List.Split
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Debug.Trace
@@ -11,10 +12,9 @@ import Graphics.Gloss.Juicy
 import Keyboard
 import Rule
 import Stage
+import System.Environment
 import System.Exit
 import World
-import System.Environment
-import Data.List.Split
 
 -------------------
 -- Display の設定
@@ -191,10 +191,12 @@ main = do
   let objs = map liftObjKind (generateEnumValues :: [Object])
       texts = map liftObjKind (generateEnumValues :: [Text])
   objImages <- mapM loadObjImage (objs ++ texts)
-  
-  
+
   args <- getArgs
-  stage <- fmap words $ readFile $ head args
-  let worldSize = (\(x:y:_) -> (x, y)) $ map read $ splitOn "," $ head stage
-  let world = initWorld $ tail stage
+  let stagePath = case args of
+        [] -> "stages/0.csv"
+        x : xs -> x
+  stage <- words <$> readFile stagePath
+  let worldSize = (\(x : y : _) -> (x, y)) $ map read $ splitOn "," $ head stage
+  let world = initWorld worldSize $ tail stage
   playIO window black 24 world (drawWorld worldSize $ M.fromList objImages) handleEvent elapseWorld

@@ -44,7 +44,10 @@ worldObjects :: World -> [ObjState]
 worldObjects world = head $ worldObjectsList world
 
 defaultRule :: [Rule]
-defaultRule = [Rule {ruleS = TText, ruleV = TIs, ruleC = TPush}]
+defaultRule =
+  [ Rule {ruleS = TText, ruleV = TIs, ruleC = TPush},
+    Rule {ruleS = TVoid, ruleV = TIs, ruleC = TStop}
+  ]
 
 getRules :: World -> [Rule]
 getRules world = filter validRule (concatMap (getRules' texts) is_list) ++ defaultRule
