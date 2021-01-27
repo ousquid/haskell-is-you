@@ -21,7 +21,7 @@ import qualified Direction as D
 import Graphics.Gloss (Picture)
 import Character (Character (..))
 import Rule (Rule (..), adjectiveList, nounList)
-import Text (Text (..))
+import Tile (Tile (..))
 
 type WorldHeight = Int
 
@@ -49,36 +49,36 @@ defaultRule =
   ]
 
 getRules :: World -> [Rule]
-getRules world = filter validRule (concatMap (getRules' texts) is_list) ++ defaultRule
+getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defaultRule
   where
     validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
     is_list :: [ObjState]
-    is_list = filter (\obj -> objStateKind obj == ObjKindText TIs) (worldObjects world)
+    is_list = filter (\obj -> objStateKind obj == ObjKindTile TIs) (worldObjects world)
 
-    getText :: ObjState -> [ObjState] -- ObjStateがTextならそのものを、ObjStateがObjectなら空を返す
-    getText obj = case objStateKind obj of
-      ObjKindText _ -> [obj]
+    getTile :: ObjState -> [ObjState] -- ObjStateがTileならそのものを、ObjStateがObjectなら空を返す
+    getTile obj = case objStateKind obj of
+      ObjKindTile _ -> [obj]
       ObjKindObj _ -> []
-    texts = concatMap getText (worldObjects world)
+    tiles = concatMap getTile (worldObjects world)
     getRules' :: [ObjState] -> ObjState -> [Rule]
-    getRules' texts is = verticalRule ++ horizontalRule
+    getRules' tiles is = verticalRule ++ horizontalRule
       where
         x = objStateX is
         y = objStateY is
-        upObj = findText texts (x, y + 1)
-        downObj = findText texts (x, y -1)
+        upObj = findTile tiles (x, y + 1)
+        downObj = findTile tiles (x, y -1)
         verticalRule = createRule upObj downObj
-        leftObj = findText texts (x -1, y)
-        rightObj = findText texts (x + 1, y)
+        leftObj = findTile tiles (x -1, y)
+        rightObj = findTile tiles (x + 1, y)
         horizontalRule = createRule leftObj rightObj
 
         createRule sObj cObj = case (sObj, cObj) of
           (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
           _ -> []
-        findText :: [ObjState] -> (Int, Int) -> Maybe Text
-        findText objects (x, y) = do
+        findTile :: [ObjState] -> (Int, Int) -> Maybe Tile
+        findTile objects (x, y) = do
           obj <- findObject objects (x, y)
-          let ObjKindText txt = objStateKind obj
+          let ObjKindTile txt = objStateKind obj
           return txt
 
 findObject :: [ObjState] -> (Int, Int) -> Maybe ObjState
@@ -89,7 +89,7 @@ data ObjState = ObjState
     objStateY :: Int,
     objStateDir :: D.Direction,
     objStateKind :: ObjKind,
-    objStateIText :: Bool,
+    objStateITile :: Bool,
     objStateId :: Int
   }
   deriving (Show, Eq)
@@ -97,10 +97,10 @@ data ObjState = ObjState
 class ObjKindInterface a where
   liftObjKind :: a -> ObjKind
 
-instance ObjKindInterface Text where
-  liftObjKind = ObjKindText
+instance ObjKindInterface Tile where
+  liftObjKind = ObjKindTile
 
 instance ObjKindInterface Character where
   liftObjKind = ObjKindObj 
 
-data ObjKind = ObjKindText Text | ObjKindObj Character deriving (Eq, Show, Ord)
+data ObjKind = ObjKindTile Tile | ObjKindObj Character deriving (Eq, Show, Ord)

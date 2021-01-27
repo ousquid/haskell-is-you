@@ -8,7 +8,7 @@ import qualified Data.Map as M
 import qualified Direction as D
 import Draw
 import Graphics.Gloss
-import Text
+import Tile
 import World
 
 initWorld :: (WorldWidth, WorldHeight) -> [String] -> World
@@ -23,10 +23,10 @@ voidObjects (width, height) = leftAndRight ++ aboveAndBottom
     aboveAndBottom = [ObjState x y D.Down (ObjKindObj CVoid) False 0 | x <- [0 .. width -1], y <- [-1, height]]
 
 stringToObjState :: [String] -> (Int -> ObjState)
-stringToObjState (x : y : dir : kind : _) = ObjState _x _y _dir objKind isText
+stringToObjState (x : y : dir : kind : _) = ObjState _x _y _dir objKind isTile
   where
-    isText = head kind == 'T'
+    isTile = head kind == 'T'
     _x = read x :: Int
     _y = read y :: Int
     _dir = read dir :: D.Direction
-    objKind = if isText then liftObjKind (read kind :: Text) else liftObjKind (read kind :: Character)
+    objKind = if isTile then liftObjKind (read kind :: Tile) else liftObjKind (read kind :: Character)

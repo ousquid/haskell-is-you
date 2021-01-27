@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 935d417d8a3264789db6d1d25a59d1d6481252716c9f33ff88263981ca8e56c6
+-- hash: d72ba8fe5d067d1b9667bb641b23764250182b9da8a669a0937e74ea2f4f7bfe
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -34,7 +34,7 @@ library
       Keyboard
       Rule
       Stage
-      Text
+      Tile
       Util
       World
   other-modules:

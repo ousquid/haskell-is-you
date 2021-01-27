@@ -1,5 +1,5 @@
 module Util
-  ( text2Character,
+  ( tile2Character,
     applyHead,
     changeHead,
     generateEnumValues,
@@ -7,10 +7,10 @@ module Util
 where
 
 import Character (Character(..))
-import Text (Text)
+import Tile (Tile)
 
-text2Character :: Text -> Character
-text2Character text = read $ "C" ++ drop 1 (show text)
+tile2Character :: Tile -> Character
+tile2Character tile = read $ "C" ++ drop 1 (show tile)
 
 applyHead :: (a -> a) -> [a] -> [a]
 applyHead f (x : xs) = f x : xs
