@@ -1,16 +1,16 @@
 module Util
-  ( text2Object,
+  ( tile2Character,
     applyHead,
     changeHead,
     generateEnumValues,
   )
 where
 
-import Object (Object)
-import Text (Text)
+import Character (Character(..))
+import Tile (Tile)
 
-text2Object :: Text -> Object
-text2Object text = read $ "O" ++ drop 1 (show text)
+tile2Character :: Tile -> Character
+tile2Character tile = read $ "C" ++ drop 1 (show tile)
 
 applyHead :: (a -> a) -> [a] -> [a]
 applyHead f (x : xs) = f x : xs

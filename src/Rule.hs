@@ -5,12 +5,12 @@ module Rule
   )
 where
 
-import Text (Text (..))
+import Tile (Tile (..))
 
 data Rule = Rule
-  { ruleS :: Text,
-    ruleV :: Text,
-    ruleC :: Text
+  { ruleS :: Tile,
+    ruleV :: Tile,
+    ruleC :: Tile
   }
   deriving (Eq)
 

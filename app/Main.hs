@@ -15,9 +15,20 @@ import Rule
 import Stage
 import System.Environment
 import System.Exit
-import Text
+import Tile
 import Util
 import World
+
+-- [Object]
+-- - Object
+-- - Tile
+--    * nounList
+--    * is
+--    * adjectiveList  
+
+-- [Object]
+-- - Character
+-- - Tile
 
 -----------------------------------
 -- updateWorld関連
@@ -66,9 +77,9 @@ elapseWorld dt = return
 
 main :: IO ()
 main = do
-  let objs = map liftObjKind (generateEnumValues :: [Object])
-      texts = map liftObjKind (generateEnumValues :: [Text])
-  objImages <- mapM loadObjImage (objs ++ texts)
+  let objs = map liftObject (generateEnumValues :: [Character])
+      tiles = map liftObject (generateEnumValues :: [Tile])
+  objImages <- mapM loadObjImage (objs ++ tiles)
 
   args <- getArgs
   let stagePath = case args of

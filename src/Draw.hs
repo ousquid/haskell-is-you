@@ -28,7 +28,7 @@ objImgScale stageSize = objSizeFloat / 320
   where
     objSizeFloat = fromIntegral $ getObjSize stageSize
 
-loadObjImage :: ObjKind -> IO (ObjKind, (PictureLeft, PictureDown, PictureUp, PictureRight))
+loadObjImage :: Object -> IO (Object, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
   left <- loadPicture kind D.Left
   down <- loadPicture kind D.Down
@@ -36,7 +36,7 @@ loadObjImage kind = do
   right <- loadPicture kind D.Right
   return (kind, (left, down, up, right))
 
-loadPicture :: ObjKind -> D.Direction -> IO Picture
+loadPicture :: Object -> D.Direction -> IO Picture
 loadPicture kind dir = do
   maybePic <- loadJuicy ("imgs/" ++ last (words $ show kind) ++ "_" ++ show dir ++ ".png")
   return $ case maybePic of
@@ -71,7 +71,7 @@ pickPicture (_, x, _, _) D.Down = x
 pickPicture (_, _, x, _) D.Up = x
 pickPicture (_, _, _, x) D.Right = x
 
-drawWorld :: (Int, Int) -> M.Map ObjKind (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
+drawWorld :: (Int, Int) -> M.Map Object (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
 drawWorld worldSize objImages world = do
   let objPictures = [drawObj worldSize obj $ pickPicture (objImages M.! objStateKind obj) (objStateDir obj) | obj <- worldObjects world]
   return (pictures (objPictures ++ [gridLines worldSize]))
