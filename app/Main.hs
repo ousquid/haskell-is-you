@@ -19,6 +19,17 @@ import Text
 import Util
 import World
 
+-- [ObjKind]
+-- - Object
+-- - Text
+--    * nounList
+--    * is
+--    * adjectiveList  
+
+-- [Object]
+-- - Character
+-- - Tile
+
 -----------------------------------
 -- updateWorld関連
 -----------------------------------
@@ -66,7 +77,7 @@ elapseWorld dt = return
 
 main :: IO ()
 main = do
-  let objs = map liftObjKind (generateEnumValues :: [Object])
+  let objs = map liftObjKind (generateEnumValues :: [Character])
       texts = map liftObjKind (generateEnumValues :: [Text])
   objImages <- mapM loadObjImage (objs ++ texts)
 

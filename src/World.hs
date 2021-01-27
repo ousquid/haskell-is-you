@@ -1,7 +1,7 @@
 module World
   ( World (..),
     ObjState (..),
-    Object (..),
+    Character (..),
     WorldWidth,
     WorldHeight,
     ObjKind (..),
@@ -19,7 +19,7 @@ import Data.List (find, intercalate)
 import qualified Data.Map.Strict as M
 import qualified Direction as D
 import Graphics.Gloss (Picture)
-import Object (Object (..))
+import Character (Character (..))
 import Rule (Rule (..), adjectiveList, nounList)
 import Text (Text (..))
 
@@ -98,9 +98,9 @@ class ObjKindInterface a where
   liftObjKind :: a -> ObjKind
 
 instance ObjKindInterface Text where
-  liftObjKind text = ObjKindText text
+  liftObjKind = ObjKindText
 
-instance ObjKindInterface Object where
-  liftObjKind obj = ObjKindObj obj
+instance ObjKindInterface Character where
+  liftObjKind = ObjKindObj 
 
-data ObjKind = ObjKindText Text | ObjKindObj Object deriving (Eq, Show, Ord)
+data ObjKind = ObjKindText Text | ObjKindObj Character deriving (Eq, Show, Ord)

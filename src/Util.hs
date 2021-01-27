@@ -1,16 +1,16 @@
 module Util
-  ( text2Object,
+  ( text2Character,
     applyHead,
     changeHead,
     generateEnumValues,
   )
 where
 
-import Object (Object)
+import Character (Character)
 import Text (Text)
 
-text2Object :: Text -> Object
-text2Object text = read $ "O" ++ drop 1 (show text)
+text2Character :: Text -> Character
+text2Character text = read $ "O" ++ drop 1 (show text)
 
 applyHead :: (a -> a) -> [a] -> [a]
 applyHead f (x : xs) = f x : xs
