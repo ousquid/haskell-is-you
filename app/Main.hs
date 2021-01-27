@@ -19,7 +19,7 @@ import Tile
 import Util
 import World
 
--- [ObjKind]
+-- [Object]
 -- - Object
 -- - Tile
 --    * nounList
@@ -77,8 +77,8 @@ elapseWorld dt = return
 
 main :: IO ()
 main = do
-  let objs = map liftObjKind (generateEnumValues :: [Character])
-      tiles = map liftObjKind (generateEnumValues :: [Tile])
+  let objs = map liftObject (generateEnumValues :: [Character])
+      tiles = map liftObject (generateEnumValues :: [Tile])
   objImages <- mapM loadObjImage (objs ++ tiles)
 
   args <- getArgs

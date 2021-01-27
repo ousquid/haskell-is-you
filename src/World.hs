@@ -4,12 +4,12 @@ module World
     Character (..),
     WorldWidth,
     WorldHeight,
-    ObjKind (..),
+    Object (..),
     PictureLeft,
     PictureDown,
     PictureUp,
     PictureRight,
-    liftObjKind,
+    liftObject,
     worldObjects,
     getRules,
   )
@@ -53,12 +53,12 @@ getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defau
   where
     validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
     is_list :: [ObjState]
-    is_list = filter (\obj -> objStateKind obj == ObjKindTile TIs) (worldObjects world)
+    is_list = filter (\obj -> objStateKind obj == OTile TIs) (worldObjects world)
 
     getTile :: ObjState -> [ObjState] -- ObjStateがTileならそのものを、ObjStateがObjectなら空を返す
     getTile obj = case objStateKind obj of
-      ObjKindTile _ -> [obj]
-      ObjKindObj _ -> []
+      OTile _ -> [obj]
+      OCharacter _ -> []
     tiles = concatMap getTile (worldObjects world)
     getRules' :: [ObjState] -> ObjState -> [Rule]
     getRules' tiles is = verticalRule ++ horizontalRule
@@ -78,7 +78,7 @@ getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defau
         findTile :: [ObjState] -> (Int, Int) -> Maybe Tile
         findTile objects (x, y) = do
           obj <- findObject objects (x, y)
-          let ObjKindTile txt = objStateKind obj
+          let OTile txt = objStateKind obj
           return txt
 
 findObject :: [ObjState] -> (Int, Int) -> Maybe ObjState
@@ -88,19 +88,19 @@ data ObjState = ObjState
   { objStateX :: Int,
     objStateY :: Int,
     objStateDir :: D.Direction,
-    objStateKind :: ObjKind,
+    objStateKind :: Object,
     objStateITile :: Bool,
     objStateId :: Int
   }
   deriving (Show, Eq)
 
-class ObjKindInterface a where
-  liftObjKind :: a -> ObjKind
+class ObjectInterface a where
+  liftObject :: a -> Object
 
-instance ObjKindInterface Tile where
-  liftObjKind = ObjKindTile
+instance ObjectInterface Tile where
+  liftObject = OTile
 
-instance ObjKindInterface Character where
-  liftObjKind = ObjKindObj 
+instance ObjectInterface Character where
+  liftObject = OCharacter 
 
-data ObjKind = ObjKindTile Tile | ObjKindObj Character deriving (Eq, Show, Ord)
+data Object = OTile Tile | OCharacter Character deriving (Eq, Show, Ord)
