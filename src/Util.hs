@@ -6,11 +6,11 @@ module Util
   )
 where
 
-import Character (Character)
+import Character (Character(..))
 import Text (Text)
 
 text2Character :: Text -> Character
-text2Character text = read $ "O" ++ drop 1 (show text)
+text2Character text = read $ "C" ++ drop 1 (show text)
 
 applyHead :: (a -> a) -> [a] -> [a]
 applyHead f (x : xs) = f x : xs
