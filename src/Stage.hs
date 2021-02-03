@@ -23,7 +23,7 @@ voidObjects (width, height) = leftAndRight ++ aboveAndBottom
     aboveAndBottom = [Object x y D.Down (OCharacter CVoid) 0 | x <- [0 .. width -1], y <- [-1, height]]
 
 stringToObject :: [String] -> (Int -> Object)
-stringToObject (x : y : dir : kind : _) = Object _x _y _dir objKind
+stringToObject [x, y, dir, kind] = Object _x _y _dir objKind
   where
     isTile = head kind == 'T'
     _x = read x :: Int
