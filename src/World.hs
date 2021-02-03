@@ -48,30 +48,26 @@ defaultRule =
   ]
 
 getRules :: World -> [Rule]
-getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defaultRule
+getRules world = filter validRule (concatMap (getRules' tileObjects) isList) ++ defaultRule
   where
     validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
-    is_list :: [Object]
-    is_list = filter (\obj -> objectIcon obj == OTile TIs) (worldObjects world)
+    isList :: [Object]
+    isList = filter (\obj -> objectIcon obj == OTile TIs) (worldObjects world)
 
-    getTile :: Object -> [Object] -- ObjectがTileならそのものを、ObjectがObjectなら空を返す
-    getTile obj = case objectIcon obj of
-      OTile _ -> [obj]
-      OCharacter _ -> []
-    tiles = concatMap getTile (worldObjects world)
+    tileObjects = filter isTile (worldObjects world)
     getRules' :: [Object] -> Object -> [Rule]
-    getRules' tiles is = verticalRule ++ horizontalRule
+    getRules' tileObjects is = verticalRule ++ horizontalRule
       where
         x = objectX is
         y = objectY is
-        upObj = findTile tiles (x, y + 1)
-        downObj = findTile tiles (x, y -1)
-        verticalRule = createRule upObj downObj
-        leftObj = findTile tiles (x -1, y)
-        rightObj = findTile tiles (x + 1, y)
-        horizontalRule = createRule leftObj rightObj
+        upTile = findTile tileObjects (x, y + 1)
+        downTile = findTile tileObjects (x, y -1)
+        verticalRule = createRule upTile downTile
+        leftTile = findTile tileObjects (x -1, y)
+        rightTile = findTile tileObjects (x + 1, y)
+        horizontalRule = createRule leftTile rightTile
 
-        createRule sObj cObj = case (sObj, cObj) of
+        createRule sTile cTile = case (sTile, cTile) of
           (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
           _ -> []
         findTile :: [Object] -> (Int, Int) -> Maybe Tile
@@ -82,6 +78,11 @@ getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defau
 
 findObject :: [Object] -> (Int, Int) -> Maybe Object
 findObject objects (x, y) = find (\obj -> x == objectX obj && y == objectY obj) objects
+
+isTile :: Object -> Bool
+isTile obj = case objectIcon obj of
+  OTile _ -> True
+  OCharacter _ -> False
 
 data Object = Object
   { objectX :: Int,
