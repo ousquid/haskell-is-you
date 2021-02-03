@@ -89,7 +89,6 @@ data ObjState = ObjState
     objStateY :: Int,
     objStateDir :: D.Direction,
     objStateKind :: Object,
-    objStateITile :: Bool,
     objStateId :: Int
   }
   deriving (Show, Eq)

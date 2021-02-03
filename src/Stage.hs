@@ -14,16 +14,16 @@ import World
 initWorld :: (WorldWidth, WorldHeight) -> [String] -> World
 initWorld worldSize stage =
   let objStates = map (stringToObjState . splitOn ",") stage
-  in World {worldObjectsList = [zipWith (\g x -> g x) objStates [1 ..] ++ voidObjects worldSize]}
+   in World {worldObjectsList = [zipWith (\g x -> g x) objStates [1 ..] ++ voidObjects worldSize]}
 
 voidObjects :: (WorldWidth, WorldHeight) -> [ObjState]
 voidObjects (width, height) = leftAndRight ++ aboveAndBottom
   where
-    leftAndRight = [ObjState x y D.Down (OCharacter CVoid) False 0 | x <- [-1, width], y <- [0 .. height -1]]
-    aboveAndBottom = [ObjState x y D.Down (OCharacter CVoid) False 0 | x <- [0 .. width -1], y <- [-1, height]]
+    leftAndRight = [ObjState x y D.Down (OCharacter CVoid) 0 | x <- [-1, width], y <- [0 .. height -1]]
+    aboveAndBottom = [ObjState x y D.Down (OCharacter CVoid) 0 | x <- [0 .. width -1], y <- [-1, height]]
 
 stringToObjState :: [String] -> (Int -> ObjState)
-stringToObjState (x : y : dir : kind : _) = ObjState _x _y _dir objKind isTile
+stringToObjState (x : y : dir : kind : _) = ObjState _x _y _dir objKind
   where
     isTile = head kind == 'T'
     _x = read x :: Int
