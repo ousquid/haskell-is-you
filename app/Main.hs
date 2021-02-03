@@ -59,8 +59,8 @@ elapseWorld dt = return
 
 main :: IO ()
 main = do
-  let objs = map liftObject (generateEnumValues :: [Character])
-      tiles = map liftObject (generateEnumValues :: [Tile])
+  let objs = map OCharacter (generateEnumValues :: [Character])
+      tiles = map OTile (generateEnumValues :: [Tile])
   objImages <- mapM loadObjImage (objs ++ tiles)
 
   args <- getArgs

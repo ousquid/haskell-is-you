@@ -9,7 +9,6 @@ module World
     PictureDown,
     PictureUp,
     PictureRight,
-    liftObject,
     worldObjects,
     getRules,
   )
@@ -92,14 +91,5 @@ data Object = Object
     objectId :: Int
   }
   deriving (Show, Eq)
-
-class ObjectInterface a where
-  liftObject :: a -> Icon
-
-instance ObjectInterface Tile where
-  liftObject = OTile
-
-instance ObjectInterface Character where
-  liftObject = OCharacter
 
 data Icon = OTile Tile | OCharacter Character deriving (Eq, Show, Ord)

@@ -29,4 +29,4 @@ stringToObject (x : y : dir : kind : _) = Object _x _y _dir objKind
     _x = read x :: Int
     _y = read y :: Int
     _dir = read dir :: D.Direction
-    objKind = if isTile then liftObject (read kind :: Tile) else liftObject (read kind :: Character)
+    objKind = if isTile then OTile (read kind :: Tile) else OCharacter (read kind :: Character)

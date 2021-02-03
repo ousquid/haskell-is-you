@@ -14,7 +14,7 @@ import World
   ( Object (..),
     World (worldObjectsList),
     getRules,
-    liftObject,
+    Icon (..),
     worldObjects,
   )
 
@@ -92,8 +92,8 @@ getObjectsWithComplement c getRules = filter (\obj -> objectIcon obj `elem` objK
   where
     subjects = getSubjects getRules c
     subjectsWithoutTile = subjects \\ [TText]
-    objKindObjList = map (liftObject . tile2Character) subjectsWithoutTile
-    objKindTileList = map liftObject tileSubjects
+    objKindObjList = map (OCharacter . tile2Character) subjectsWithoutTile
+    objKindTileList = map OTile tileSubjects
     objKindList = objKindObjList ++ objKindTileList
     tileSubjects = if TText `elem` subjects then allTiles else []
     allTiles = generateEnumValues :: [Tile]
@@ -111,8 +111,8 @@ metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObj
     metamonRules = filter isMetamonRule (getRules world)
     isMetamonRule (Rule s v c) = s `elem` nounList && v == TIs && c `elem` nounList
     metamonObjs = concatMap (applyMetamon metamonRules) (worldObjects world)
-    applyMetamon getRules obj = [obj {objectIcon = liftObject $ tile2Character (ruleC rule)} | rule <- getRules, liftObject (tile2Character (ruleS rule)) == objectIcon obj]
-    removedObjs = filter (\x -> objectIcon x `notElem` map (liftObject . tile2Character . ruleS) metamonRules) (worldObjects world)
+    applyMetamon getRules obj = [obj {objectIcon = OCharacter $ tile2Character (ruleC rule)} | rule <- getRules, OCharacter (tile2Character (ruleS rule)) == objectIcon obj]
+    removedObjs = filter (\x -> objectIcon x `notElem` map (OCharacter . tile2Character . ruleS) metamonRules) (worldObjects world)
 
 assignID :: [Object] -> [Object]
 assignID objs = zipWith (\obj id -> obj {objectId = id}) objs [1 ..]
