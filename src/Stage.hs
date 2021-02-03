@@ -13,17 +13,17 @@ import World
 
 initWorld :: (WorldWidth, WorldHeight) -> [String] -> World
 initWorld worldSize stage =
-  let objStates = map (stringToObjState . splitOn ",") stage
-   in World {worldObjectsList = [zipWith (\g x -> g x) objStates [1 ..] ++ voidObjects worldSize]}
+  let objects = map (stringToObject . splitOn ",") stage
+   in World {worldObjectsList = [zipWith (\g x -> g x) objects [1 ..] ++ voidObjects worldSize]}
 
-voidObjects :: (WorldWidth, WorldHeight) -> [ObjState]
+voidObjects :: (WorldWidth, WorldHeight) -> [Object]
 voidObjects (width, height) = leftAndRight ++ aboveAndBottom
   where
-    leftAndRight = [ObjState x y D.Down (OCharacter CVoid) 0 | x <- [-1, width], y <- [0 .. height -1]]
-    aboveAndBottom = [ObjState x y D.Down (OCharacter CVoid) 0 | x <- [0 .. width -1], y <- [-1, height]]
+    leftAndRight = [Object x y D.Down (OCharacter CVoid) 0 | x <- [-1, width], y <- [0 .. height -1]]
+    aboveAndBottom = [Object x y D.Down (OCharacter CVoid) 0 | x <- [0 .. width -1], y <- [-1, height]]
 
-stringToObjState :: [String] -> (Int -> ObjState)
-stringToObjState (x : y : dir : kind : _) = ObjState _x _y _dir objKind
+stringToObject :: [String] -> (Int -> Object)
+stringToObject (x : y : dir : kind : _) = Object _x _y _dir objKind
   where
     isTile = head kind == 'T'
     _x = read x :: Int

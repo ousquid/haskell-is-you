@@ -1,10 +1,10 @@
 module World
   ( World (..),
-    ObjState (..),
+    Object (..),
     Character (..),
     WorldWidth,
     WorldHeight,
-    Object (..),
+    Icon (..),
     PictureLeft,
     PictureDown,
     PictureUp,
@@ -15,11 +15,11 @@ module World
   )
 where
 
+import Character (Character (..))
 import Data.List (find, intercalate)
 import qualified Data.Map.Strict as M
 import qualified Direction as D
 import Graphics.Gloss (Picture)
-import Character (Character (..))
 import Rule (Rule (..), adjectiveList, nounList)
 import Tile (Tile (..))
 
@@ -28,7 +28,7 @@ type WorldHeight = Int
 type WorldWidth = Int
 
 newtype World = World
-  { worldObjectsList :: [[ObjState]]
+  { worldObjectsList :: [[Object]]
   }
 
 type PictureLeft = Picture
@@ -39,7 +39,7 @@ type PictureUp = Picture
 
 type PictureRight = Picture
 
-worldObjects :: World -> [ObjState]
+worldObjects :: World -> [Object]
 worldObjects world = head $ worldObjectsList world
 
 defaultRule :: [Rule]
@@ -52,19 +52,19 @@ getRules :: World -> [Rule]
 getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defaultRule
   where
     validRule rule = ruleS rule `elem` nounList && ruleC rule `elem` (nounList ++ adjectiveList)
-    is_list :: [ObjState]
-    is_list = filter (\obj -> objStateKind obj == OTile TIs) (worldObjects world)
+    is_list :: [Object]
+    is_list = filter (\obj -> objectIcon obj == OTile TIs) (worldObjects world)
 
-    getTile :: ObjState -> [ObjState] -- ObjStateがTileならそのものを、ObjStateがObjectなら空を返す
-    getTile obj = case objStateKind obj of
+    getTile :: Object -> [Object] -- ObjectがTileならそのものを、ObjectがObjectなら空を返す
+    getTile obj = case objectIcon obj of
       OTile _ -> [obj]
       OCharacter _ -> []
     tiles = concatMap getTile (worldObjects world)
-    getRules' :: [ObjState] -> ObjState -> [Rule]
+    getRules' :: [Object] -> Object -> [Rule]
     getRules' tiles is = verticalRule ++ horizontalRule
       where
-        x = objStateX is
-        y = objStateY is
+        x = objectX is
+        y = objectY is
         upObj = findTile tiles (x, y + 1)
         downObj = findTile tiles (x, y -1)
         verticalRule = createRule upObj downObj
@@ -75,31 +75,31 @@ getRules world = filter validRule (concatMap (getRules' tiles) is_list) ++ defau
         createRule sObj cObj = case (sObj, cObj) of
           (Just a, Just b) -> [Rule {ruleS = a, ruleV = TIs, ruleC = b}]
           _ -> []
-        findTile :: [ObjState] -> (Int, Int) -> Maybe Tile
+        findTile :: [Object] -> (Int, Int) -> Maybe Tile
         findTile objects (x, y) = do
           obj <- findObject objects (x, y)
-          let OTile txt = objStateKind obj
+          let OTile txt = objectIcon obj
           return txt
 
-findObject :: [ObjState] -> (Int, Int) -> Maybe ObjState
-findObject objects (x, y) = find (\obj -> x == objStateX obj && y == objStateY obj) objects
+findObject :: [Object] -> (Int, Int) -> Maybe Object
+findObject objects (x, y) = find (\obj -> x == objectX obj && y == objectY obj) objects
 
-data ObjState = ObjState
-  { objStateX :: Int,
-    objStateY :: Int,
-    objStateDir :: D.Direction,
-    objStateKind :: Object,
-    objStateId :: Int
+data Object = Object
+  { objectX :: Int,
+    objectY :: Int,
+    objectDir :: D.Direction,
+    objectIcon :: Icon,
+    objectId :: Int
   }
   deriving (Show, Eq)
 
 class ObjectInterface a where
-  liftObject :: a -> Object
+  liftObject :: a -> Icon
 
 instance ObjectInterface Tile where
   liftObject = OTile
 
 instance ObjectInterface Character where
-  liftObject = OCharacter 
+  liftObject = OCharacter
 
-data Object = OTile Tile | OCharacter Character deriving (Eq, Show, Ord)
+data Icon = OTile Tile | OCharacter Character deriving (Eq, Show, Ord)

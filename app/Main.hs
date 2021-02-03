@@ -19,22 +19,7 @@ import Tile
 import Util
 import World
 
--- [Object]
--- - Object
--- - Tile
---    * nounList
---    * is
---    * adjectiveList  
 
--- [Object]
--- - Character
--- - Tile
-
------------------------------------
--- updateWorld関連
------------------------------------
-
--- | イベントを処理する関数。EventKey以外のイベントは無視する
 handleEvent :: Event -> World -> IO World
 handleEvent (EventKey key Down _ _) world = do
   let w = updateWorld key world
@@ -66,9 +51,6 @@ tailWorldObjects :: World -> World
 tailWorldObjects world@(World [x]) = world
 tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
 
------------------------------------
--- main 関数
------------------------------------
 window :: Display
 window = InWindow "Haskell Is You" (windowWidth, windowHeight) (0, 0)
 

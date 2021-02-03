@@ -28,7 +28,7 @@ objImgScale stageSize = objSizeFloat / 320
   where
     objSizeFloat = fromIntegral $ getObjSize stageSize
 
-loadObjImage :: Object -> IO (Object, (PictureLeft, PictureDown, PictureUp, PictureRight))
+loadObjImage :: Icon -> IO (Icon, (PictureLeft, PictureDown, PictureUp, PictureRight))
 loadObjImage kind = do
   left <- loadPicture kind D.Left
   down <- loadPicture kind D.Down
@@ -36,7 +36,7 @@ loadObjImage kind = do
   right <- loadPicture kind D.Right
   return (kind, (left, down, up, right))
 
-loadPicture :: Object -> D.Direction -> IO Picture
+loadPicture :: Icon -> D.Direction -> IO Picture
 loadPicture kind dir = do
   maybePic <- loadJuicy ("imgs/" ++ last (words $ show kind) ++ "_" ++ show dir ++ ".png")
   return $ case maybePic of
@@ -59,8 +59,8 @@ gridLines (stageWidth, stageHeight) =
     bottomStart = bottom + offsetHeight
     objSize = getObjSize (stageWidth, stageHeight)
 
-drawObj :: (WorldWidth, WorldHeight) -> ObjState -> Picture -> Picture
-drawObj (width, height) obj picture = translate (fromIntegral $ (objStateX obj - width `div` 2) * objSize) (fromIntegral $ (objStateY obj - height `div` 2) * objSize) $ scale objScale objScale picture
+drawObj :: (WorldWidth, WorldHeight) -> Object -> Picture -> Picture
+drawObj (width, height) obj picture = translate (fromIntegral $ (objectX obj - width `div` 2) * objSize) (fromIntegral $ (objectY obj - height `div` 2) * objSize) $ scale objScale objScale picture
   where
     objScale = objImgScale (width, height)
     objSize = getObjSize (width, height)
@@ -71,7 +71,7 @@ pickPicture (_, x, _, _) D.Down = x
 pickPicture (_, _, x, _) D.Up = x
 pickPicture (_, _, _, x) D.Right = x
 
-drawWorld :: (Int, Int) -> M.Map Object (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
+drawWorld :: (Int, Int) -> M.Map Icon (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
 drawWorld worldSize objImages world = do
-  let objPictures = [drawObj worldSize obj $ pickPicture (objImages M.! objStateKind obj) (objStateDir obj) | obj <- worldObjects world]
+  let objPictures = [drawObj worldSize obj $ pickPicture (objImages M.! objectIcon obj) (objectDir obj) | obj <- worldObjects world]
   return (pictures (objPictures ++ [gridLines worldSize]))
