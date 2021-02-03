@@ -61,7 +61,7 @@ main :: IO ()
 main = do
   let objs = map OCharacter (generateEnumValues :: [Character])
       tiles = map OTile (generateEnumValues :: [Tile])
-  objImages <- mapM loadObjImage (objs ++ tiles)
+  objImages <- mapM loadIconImage (objs ++ tiles)
 
   args <- getArgs
   let stagePath = case args of

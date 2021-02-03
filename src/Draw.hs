@@ -1,5 +1,5 @@
 module Draw
-  ( loadObjImage,
+  ( loadIconImage,
     gridLines,
     windowWidth,
     windowHeight,
@@ -17,19 +17,19 @@ windowWidth, windowHeight :: Num a => a
 windowWidth = 640
 windowHeight = 480
 
-getObjSize :: (Int, Int) -> Int
-getObjSize (stageWidth, stageHeight) = min objWidth objHeight
+getIconSize :: (Int, Int) -> Int
+getIconSize (stageWidth, stageHeight) = min iconWidth iconHeight
   where
-    objWidth = windowWidth `div` stageWidth
-    objHeight = windowHeight `div` stageHeight
+    iconWidth = windowWidth `div` stageWidth
+    iconHeight = windowHeight `div` stageHeight
 
-objImgScale :: (Int, Int) -> Float
-objImgScale stageSize = objSizeFloat / 320
+iconImgScale :: (Int, Int) -> Float
+iconImgScale stageSize = iconSizeFloat / 320
   where
-    objSizeFloat = fromIntegral $ getObjSize stageSize
+    iconSizeFloat = fromIntegral $ getIconSize stageSize
 
-loadObjImage :: Icon -> IO (Icon, (PictureLeft, PictureDown, PictureUp, PictureRight))
-loadObjImage kind = do
+loadIconImage :: Icon -> IO (Icon, (PictureLeft, PictureDown, PictureUp, PictureRight))
+loadIconImage kind = do
   left <- loadPicture kind D.Left
   down <- loadPicture kind D.Down
   up <- loadPicture kind D.Up
@@ -46,24 +46,27 @@ loadPicture kind dir = do
 gridLines :: (Int, Int) -> Picture
 gridLines (stageWidth, stageHeight) =
   pictures $
-    [color white $ line [(x, fromIntegral bottom), (x, fromIntegral top)] | x <- map fromIntegral [leftStart, leftStart + objSize .. right]]
-      ++ [color white $ line [(fromIntegral left, y), (fromIntegral right, y)] | y <- map fromIntegral [bottomStart, bottomStart + objSize .. top]]
+    [color white $ line [(x, fromIntegral bottom), (x, fromIntegral top)] | x <- map fromIntegral [leftStart, leftStart + iconSize .. right]]
+      ++ [color white $ line [(fromIntegral left, y), (fromIntegral right, y)] | y <- map fromIntegral [bottomStart, bottomStart + iconSize .. top]]
   where
-    offsetHeight = if even stageHeight then objSize `div` 2 else 0
-    offsetWidth = if even stageWidth then objSize `div` 2 else 0
-    top = (stageHeight * objSize) `div` 2
+    offsetHeight = if even stageHeight then iconSize `div` 2 else 0
+    offsetWidth = if even stageWidth then iconSize `div` 2 else 0
+    top = (stageHeight * iconSize) `div` 2
     bottom = - top
-    right = (stageWidth * objSize) `div` 2
+    right = (stageWidth * iconSize) `div` 2
     left = - right
     leftStart = left + offsetWidth
     bottomStart = bottom + offsetHeight
-    objSize = getObjSize (stageWidth, stageHeight)
+    iconSize = getIconSize (stageWidth, stageHeight)
 
-drawObj :: (WorldWidth, WorldHeight) -> Object -> Picture -> Picture
-drawObj (width, height) obj picture = translate (fromIntegral $ (objectX obj - width `div` 2) * objSize) (fromIntegral $ (objectY obj - height `div` 2) * objSize) $ scale objScale objScale picture
+drawObject :: (WorldWidth, WorldHeight) -> Object -> Picture -> Picture
+drawObject (width, height) obj picture = translate x y $ scale iconScale iconScale picture
   where
-    objScale = objImgScale (width, height)
-    objSize = getObjSize (width, height)
+    iconScale = iconImgScale (width, height)
+    iconSize = getIconSize (width, height)
+    --(x, y) = map (\(a, b) -> fromIntegral $ (a - b `div` 2) * iconSize) [(objectX obj, width),  (objectY obj, height)]
+    x = fromIntegral $ (objectX obj - width `div` 2) * iconSize
+    y = fromIntegral $ (objectY obj - height `div` 2) * iconSize
 
 pickPicture :: (Picture, Picture, Picture, Picture) -> D.Direction -> Picture
 pickPicture (x, _, _, _) D.Left = x
@@ -73,5 +76,5 @@ pickPicture (_, _, _, x) D.Right = x
 
 drawWorld :: (Int, Int) -> M.Map Icon (PictureLeft, PictureDown, PictureUp, PictureRight) -> World -> IO Picture
 drawWorld worldSize objImages world = do
-  let objPictures = [drawObj worldSize obj $ pickPicture (objImages M.! objectIcon obj) (objectDir obj) | obj <- worldObjects world]
+  let objPictures = [drawObject worldSize obj $ pickPicture (objImages M.! objectIcon obj) (objectDir obj) | obj <- worldObjects world]
   return (pictures (objPictures ++ [gridLines worldSize]))
