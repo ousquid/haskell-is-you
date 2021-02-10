@@ -11,11 +11,12 @@ module World
     PictureRight,
     worldObjects,
     getRules,
+    removeObjects
   )
 where
 
 import Character (Character (..))
-import Data.List (find, intercalate)
+import Data.List (find, intercalate, (\\))
 import qualified Data.Map.Strict as M
 import qualified Direction as D
 import Graphics.Gloss (Picture)
@@ -78,6 +79,9 @@ getRules world = filter validRule (concatMap (getRules' tileObjects) isList) ++ 
 
 findObject :: [Object] -> (Int, Int) -> Maybe Object
 findObject objects (x, y) = find (\obj -> x == objectX obj && y == objectY obj) objects
+
+removeObjects :: World -> [Object] -> World
+removeObjects world objects = World {worldObjectsList = (worldObjects world \\ objects) : tail (worldObjectsList world)}
 
 isTile :: Object -> Bool
 isTile obj = case objectIcon obj of

@@ -29,7 +29,7 @@ handleEvent _ world = return world
 
 updateWorld :: Key -> World -> World
 updateWorld key world = case action of
-  Move dir -> removeUncangedWorldObjects $ metamorphose $ walk dir $ duplicateWorldObjects world
+  Move dir -> removeUncangedWorldObjects $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
   Step -> metamorphose $ duplicateWorldObjects world
   Reverse -> tailWorldObjects world
   DoNothing -> world

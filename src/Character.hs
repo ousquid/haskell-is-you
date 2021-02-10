@@ -3,4 +3,4 @@ module Character
   )
 where
 
-data Character = CHaskell | CRock | CWall | CFlag | CVoid deriving (Eq, Show, Enum, Ord, Read)
+data Character = CHaskell | CRock | CWall | CFlag | CWater | CVoid deriving (Eq, Show, Enum, Ord, Read)

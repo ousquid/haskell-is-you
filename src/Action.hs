@@ -2,6 +2,7 @@ module Action
   ( walk,
     metamorphose,
     win,
+    sink
   )
 where
 
@@ -16,6 +17,7 @@ import World
     getRules,
     Icon (..),
     worldObjects,
+    removeObjects
   )
 
 walk :: D.Direction -> World -> World
@@ -104,6 +106,12 @@ win world = not (null (map obj2position youList `intersect` map obj2position win
     youList = getObjectsWithComplement TYou (getRules world) (worldObjects world)
     winList = getObjectsWithComplement TWin (getRules world) (worldObjects world)
     obj2position obj = (objectX obj, objectY obj)
+
+sink :: World -> World
+sink world = removeObjects world removeList
+  where sinkList = getObjectsWithComplement TSink (getRules world) (worldObjects world)
+        sinkPosList = nub $ map (\o -> (objectX o, objectY o)) sinkList
+        removeList = concat [objList | sinkPos <- sinkPosList, let objList = findObjects (worldObjects world) sinkPos, length objList > 1]
 
 metamorphose :: World -> World
 metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObjs ++ metamonObjs) (worldObjectsList world)}
