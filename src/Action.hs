@@ -4,6 +4,7 @@ module Action
     win,
     sink,
     defeat,
+    melt,
   )
 where
 
@@ -114,6 +115,14 @@ sink world = removeObjects world removeList
     sinkList = getObjectsWithComplement TSink (getRules world) (worldObjects world)
     sinkPosList = nub $ map (\o -> (objectX o, objectY o)) sinkList
     removeList = concat [objList | sinkPos <- sinkPosList, let objList = findObjects (worldObjects world) sinkPos, length objList > 1]
+
+melt :: World -> World
+melt world = removeObjects world removeList
+  where
+    meltList = getObjectsWithComplement TMelt (getRules world) (worldObjects world)
+    hotList = getObjectsWithComplement THot (getRules world) (worldObjects world)
+    hotPosList = nub $ map (\o -> (objectX o, objectY o)) hotList
+    removeList = concat [objList | hotPos <- hotPosList, let objList = findObjects meltList hotPos]
 
 defeat :: World -> World
 defeat world = removeObjects world removeList

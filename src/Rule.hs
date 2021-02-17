@@ -17,6 +17,6 @@ data Rule = Rule
 instance Show Rule where
   show (Rule s v c) = " " ++ unwords (map (tail . show) [s, v, c])
 
-nounList = [THaskell, TRock, TWall, TFlag, TText, TWater, TSkull]
+nounList = [THaskell, TRock, TWall, TFlag, TText, TWater, TSkull, TLava]
 
-adjectiveList = [TWin, TStop, TSink, TPush, TYou, TDefeat]
+adjectiveList = [TWin, TStop, TSink, TPush, TYou, TDefeat, THot, TMelt]
