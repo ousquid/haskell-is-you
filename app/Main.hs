@@ -19,7 +19,6 @@ import Tile
 import Util
 import World
 
-
 handleEvent :: Event -> World -> IO World
 handleEvent (EventKey key Down _ _) world = do
   let w = updateWorld key world
@@ -29,7 +28,7 @@ handleEvent _ world = return world
 
 updateWorld :: Key -> World -> World
 updateWorld key world = case action of
-  Move dir -> removeUncangedWorldObjects $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
+  Move dir -> removeUncangedWorldObjects $ defeat $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
   Step -> metamorphose $ duplicateWorldObjects world
   Reverse -> tailWorldObjects world
   DoNothing -> world

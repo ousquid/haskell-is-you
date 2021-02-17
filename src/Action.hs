@@ -2,7 +2,8 @@ module Action
   ( walk,
     metamorphose,
     win,
-    sink
+    sink,
+    defeat,
   )
 where
 
@@ -12,12 +13,12 @@ import Rule (Rule (Rule, ruleC, ruleS), nounList)
 import Tile (Tile (..))
 import Util (changeHead, generateEnumValues, tile2Character)
 import World
-  ( Object (..),
+  ( Icon (..),
+    Object (..),
     World (worldObjectsList),
     getRules,
-    Icon (..),
+    removeObjects,
     worldObjects,
-    removeObjects
   )
 
 walk :: D.Direction -> World -> World
@@ -109,9 +110,18 @@ win world = not (null (map obj2position youList `intersect` map obj2position win
 
 sink :: World -> World
 sink world = removeObjects world removeList
-  where sinkList = getObjectsWithComplement TSink (getRules world) (worldObjects world)
-        sinkPosList = nub $ map (\o -> (objectX o, objectY o)) sinkList
-        removeList = concat [objList | sinkPos <- sinkPosList, let objList = findObjects (worldObjects world) sinkPos, length objList > 1]
+  where
+    sinkList = getObjectsWithComplement TSink (getRules world) (worldObjects world)
+    sinkPosList = nub $ map (\o -> (objectX o, objectY o)) sinkList
+    removeList = concat [objList | sinkPos <- sinkPosList, let objList = findObjects (worldObjects world) sinkPos, length objList > 1]
+
+defeat :: World -> World
+defeat world = removeObjects world removeList
+  where
+    youList = getObjectsWithComplement TYou (getRules world) (worldObjects world)
+    defeatList = getObjectsWithComplement TDefeat (getRules world) (worldObjects world)
+    defeatPosList = nub $ map (\o -> (objectX o, objectY o)) defeatList
+    removeList = concat [objList | defeatPos <- defeatPosList, let objList = findObjects youList defeatPos]
 
 metamorphose :: World -> World
 metamorphose world = world {worldObjectsList = changeHead (assignID $ removedObjs ++ metamonObjs) (worldObjectsList world)}

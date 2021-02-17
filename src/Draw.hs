@@ -14,8 +14,8 @@ import Graphics.Gloss.Juicy
 import World
 
 windowWidth, windowHeight :: Num a => a
-windowWidth = 640
-windowHeight = 480
+windowWidth = 640 * 2
+windowHeight = 480 * 2
 
 getIconSize :: (Int, Int) -> Int
 getIconSize (stageWidth, stageHeight) = min iconWidth iconHeight
