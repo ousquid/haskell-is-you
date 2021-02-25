@@ -29,6 +29,7 @@ library:
   - gloss-juicy
   - containers
   - split
+  - lens-aeson
 
 executables:
   haskell-is-you-exe:
@@ -44,6 +45,9 @@ executables:
     - haskell-is-you
     - containers
     - split
+    - xml-lens
+    - xml-conduit
+    - lens
 
 tests:
   haskell-is-you-test:
