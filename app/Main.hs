@@ -38,35 +38,24 @@ main = do
 
   ----------------------------
 
-  -- doc <- Text.XML.readFile def "stages/0.tmx"
-  -- let Just height = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "height") :: Maybe Int
-  -- let Just width = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "width") :: Maybe Int
-  -- let Just stage = Data.List.filter (`notElem` ['\r','\n']) . T.unpack  <$> doc ^? root . named "map" ... named "layer" ... named "data" . text
-  -- print height
-  -- print width
-  -- print ((map read $ splitOn "," stage)::[Int])
+  doc <- X.readFile X.def "stages/0.tmx"
+  let Just height = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "height") :: Maybe Int
+  let Just width = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "width") :: Maybe Int
+  let Just stage = Data.List.filter (`notElem` ['\r', '\n']) . T.unpack <$> doc ^? root . named "map" ... named "layer" ... named "data" . text
+  print height
+  print width
+  let stageInt = (map read $ splitOn "," stage) :: [Int]
+  print [((idx `mod` width, idx `div` width), id) | (idx, id) <- zip [0 ..] stageInt, id /= 0]
 
-  ----------------------------
+----------------------------
 
-  tilemap <- readFile "stages/haskell_is_you.json"
-  let ids = tilemap ^.. key "tiles" . values . key "id" . _Integer
-  let imgs = tilemap ^.. key "tiles" . values . key "image" . _String
+-- tilemap <- readFile "stages/haskell_is_you.json"
+-- let ids = tilemap ^.. key "tiles" . values . key "id" . _Integer
+-- let imgs = tilemap ^.. key "tiles" . values . key "image" . _String
 
-  -- let Just image_name_list = map (key "image") tilemap ^? key "tiles"
-  -- let Just id_list = map (key "id") <$> tilemap ^? key "tiles"
-  print $ zip imgs ids
+-- print $ zip ids $ map parseImagePath imgs
 
-  -- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
-  -- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
-  -- tilemap ^.. key "tiles" . values . key "id" . _Integer
-  -- let Just id_list = map (key "id") <$> tilemap ^? key "tiles"
-  print $ zip imgs ids
-
-  -- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
-  -- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
-  -- tilemap ^.. key "tiles" . values . key "id" . _Integer
-
-  print $ zip ids $ map parseImagePath imgs
+----------------------------
 
 --   let objs = map OCharacter (generateEnumValues :: [Character])
 --       tiles = map OTile (generateEnumValues :: [Tile])
