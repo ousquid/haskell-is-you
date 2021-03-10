@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Action ()
+import Action
 import Control.Lens
 import Data.Aeson.Lens
 import Data.Char
@@ -12,63 +12,79 @@ import qualified Data.Text as T
 import Debug.Trace
 import qualified Direction as D
 import Draw
+import Graphics.Gloss
+import Graphics.Gloss.Interface.IO.Game
+import Graphics.Gloss.Juicy
+import Keyboard
 import Rule
 import Stage
 import System.Environment
 import System.Exit
-import System.FilePath.Posix
 import qualified Text.XML as X
-import Text.XML.Lens
+import qualified Text.XML.Lens as XL
 import Tile
 import Util
 import World
 
-parseImagePath :: T.Text -> (Icon, D.Direction)
-parseImagePath str = (icon, dir)
+handleEvent :: Event -> World -> IO World
+handleEvent (EventKey key Down _ _) world = do
+  let w = updateWorld key world
+  print (getRules w)
+  if win w then exitSuccess else return w
+handleEvent _ world = return world
+
+updateWorld :: Key -> World -> World
+updateWorld key world = case action of
+  Move dir -> removeUncangedWorldObjects $ defeat $ melt $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
+  Step -> metamorphose $ duplicateWorldObjects world
+  Reverse -> tailWorldObjects world
+  DoNothing -> world
   where
-    [iconStr, directionStr] = splitOn "_" $ takeBaseName $ T.unpack str
-    icon = if head iconStr == 'T' then OTile (read iconStr :: Tile) else OCharacter (read iconStr :: Character)
-    dir = read directionStr :: D.Direction
+    action = keyToAction key
+
+removeUncangedWorldObjects :: World -> World
+removeUncangedWorldObjects world@(World (x : y : ys))
+  | x == y = world {worldObjectsList = y : ys}
+  | otherwise = world
+
+duplicateWorldObjects :: World -> World
+duplicateWorldObjects world@(World (x : y : _))
+  | x == y = world
+  | otherwise = world {worldObjectsList = head (worldObjectsList world) : worldObjectsList world}
+duplicateWorldObjects world = world {worldObjectsList = head (worldObjectsList world) : worldObjectsList world}
+
+tailWorldObjects :: World -> World
+tailWorldObjects world@(World [x]) = world
+tailWorldObjects world = world {worldObjectsList = tail $ worldObjectsList world}
+
+window :: Display
+window = InWindow "Haskell Is You" (windowWidth, windowHeight) (0, 0)
+
+elapseWorld :: Float -> World -> IO World
+elapseWorld dt = return
 
 main :: IO ()
 main = do
-  -- let extract_csv_from_tmx = init . init . init . drop 5
-  -- stage <- extract_csv_from_tmx . lines <$> readFile "stages/0.tmx"
-  -- print (map init stage)
+  let objs = map OCharacter (generateEnumValues :: [Character])
+      tiles = map OTile (generateEnumValues :: [Tile])
+  objImages <- mapM loadIconImage (objs ++ tiles)
 
-  ----------------------------
+  args <- getArgs
+  let stagePath = case args of
+        [] -> "stages/0.tmx"
+        x : xs -> x
 
-  doc <- X.readFile X.def "stages/0.tmx"
-  let Just height = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "height") :: Maybe Int
-  let Just width = (read . T.unpack <$> doc ^? root . named "map" ... named "layer" . attr "width") :: Maybe Int
-  let Just stage = Data.List.filter (`notElem` ['\r', '\n']) . T.unpack <$> doc ^? root . named "map" ... named "layer" ... named "data" . text
-  print height
-  print width
-  let stageInt = (map read $ splitOn "," stage) :: [Integer]
-  let idWithCoord = [((idx `mod` width, idx `div` width), id) | (idx, id) <- zip [0 ..] stageInt, id /= 0]
+  -- ステージファイル tmx の読み込み
+  doc <- X.readFile X.def stagePath
+  let Just width = (read . T.unpack <$> doc ^? XL.root . XL.named "map" ... XL.named "layer" . XL.attr "width") :: Maybe Int
+  let Just height = (read . T.unpack <$> doc ^? XL.root . XL.named "map" ... XL.named "layer" . XL.attr "height") :: Maybe Int
+  let Just stageStr = Data.List.filter (`notElem` ['\r', '\n']) . T.unpack <$> doc ^? XL.root . XL.named "map" ... XL.named "layer" ... XL.named "data" . XL.text
+  -- let stage = (map read $ splitOn "," stageStr) :: [Integer]
 
-  ----------------------------
-
+  -- タイルマップ json の読み込み
   tilemap <- readFile "stages/haskell_is_you.json"
-  let ids = tilemap ^.. key "tiles" . values . key "id" . _Integer
-  let imgs = tilemap ^.. key "tiles" . values . key "image" . _String
+  let tileIds = tilemap ^.. key "tiles" . values . key "id" . _Integer
+  let tileImgPaths = tilemap ^.. key "tiles" . values . key "image" . _String
 
-  let idToObj = M.fromList $ zip ids $ map parseImagePath imgs
-
-  --print $ filter snd $ head idWithCoord
-  print [(pos, obj) | (pos, id) <- idWithCoord, let obj = idToObj M.! id]
-
-----------------------------
-
---   let objs = map OCharacter (generateEnumValues :: [Character])
---       tiles = map OTile (generateEnumValues :: [Tile])
---   objImages <- mapM loadIconImage (objs ++ tiles)
-
---   args <- getArgs
---   let stagePath = case args of
---         [] -> "stages/0.csv"
---         x : xs -> x
---   stage <- words <$> readFile stagePath
---   let worldSize = (\(x : y : _) -> (x, y)) $ map read $ splitOn "," $ head stage
---   let world = initWorld worldSize $ tail stage
---   playIO window black 24 world (drawWorld worldSize $ M.fromList objImages) handleEvent elapseWorld
+  let world = initWorld (width, height) stageStr tileIds tileImgPaths
+  playIO window black 24 world (drawWorld (width, height) $ M.fromList objImages) handleEvent elapseWorld

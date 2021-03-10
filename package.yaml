@@ -29,6 +29,8 @@ library:
   - gloss-juicy
   - containers
   - split
+  - text
+  - filepath
 
 executables:
   haskell-is-you-exe:
@@ -49,7 +51,6 @@ executables:
     - lens
     - text
     - lens-aeson
-    - filepath
 
 tests:
   haskell-is-you-test:
