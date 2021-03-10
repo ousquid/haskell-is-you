@@ -49,6 +49,7 @@ executables:
     - lens
     - text
     - lens-aeson
+    - filepath
 
 tests:
   haskell-is-you-test:

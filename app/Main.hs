@@ -2,12 +2,13 @@
 
 import Action ()
 import Control.Lens
+import Data.Aeson.Lens
 import Data.Char
 import Data.List
 import Data.List.Split
-import qualified Data.Text as T
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Text as T
 import Debug.Trace
 import qualified Direction as D
 import Draw
@@ -15,12 +16,19 @@ import Rule
 import Stage
 import System.Environment
 import System.Exit
+import System.FilePath.Posix
 import qualified Text.XML as X
 import Text.XML.Lens
 import Tile
 import Util
 import World
-import Data.Aeson.Lens
+
+parseImagePath :: T.Text -> (Icon, D.Direction)
+parseImagePath str = (icon, dir)
+  where
+    [iconStr, directionStr] = splitOn "_" $ takeBaseName $ T.unpack str
+    icon = if head iconStr == 'T' then OTile (read iconStr :: Tile) else OCharacter (read iconStr :: Character)
+    dir = read directionStr :: D.Direction
 
 main :: IO ()
 main = do
@@ -48,15 +56,17 @@ main = do
   -- let Just id_list = map (key "id") <$> tilemap ^? key "tiles"
   print $ zip imgs ids
 
--- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
--- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
--- tilemap ^.. key "tiles" . values . key "id" . _Integer
+  -- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
+  -- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
+  -- tilemap ^.. key "tiles" . values . key "id" . _Integer
   -- let Just id_list = map (key "id") <$> tilemap ^? key "tiles"
   print $ zip imgs ids
 
--- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
--- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
--- tilemap ^.. key "tiles" . values . key "id" . _Integer
+  -- Prelude.map (flip (^..) (key "id")) $ tilemap ^.. key "tiles" . value
+  -- tilemap ^.. key "tiles" . _Array . each . key "id" . _Integer
+  -- tilemap ^.. key "tiles" . values . key "id" . _Integer
+
+  print $ zip ids $ map parseImagePath imgs
 
 --   let objs = map OCharacter (generateEnumValues :: [Character])
 --       tiles = map OTile (generateEnumValues :: [Tile])
