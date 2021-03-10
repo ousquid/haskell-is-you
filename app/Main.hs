@@ -44,16 +44,19 @@ main = do
   let Just stage = Data.List.filter (`notElem` ['\r', '\n']) . T.unpack <$> doc ^? root . named "map" ... named "layer" ... named "data" . text
   print height
   print width
-  let stageInt = (map read $ splitOn "," stage) :: [Int]
-  print [((idx `mod` width, idx `div` width), id) | (idx, id) <- zip [0 ..] stageInt, id /= 0]
+  let stageInt = (map read $ splitOn "," stage) :: [Integer]
+  let idWithCoord = [((idx `mod` width, idx `div` width), id) | (idx, id) <- zip [0 ..] stageInt, id /= 0]
 
-----------------------------
+  ----------------------------
 
--- tilemap <- readFile "stages/haskell_is_you.json"
--- let ids = tilemap ^.. key "tiles" . values . key "id" . _Integer
--- let imgs = tilemap ^.. key "tiles" . values . key "image" . _String
+  tilemap <- readFile "stages/haskell_is_you.json"
+  let ids = tilemap ^.. key "tiles" . values . key "id" . _Integer
+  let imgs = tilemap ^.. key "tiles" . values . key "image" . _String
 
--- print $ zip ids $ map parseImagePath imgs
+  let idToObj = M.fromList $ zip ids $ map parseImagePath imgs
+
+  --print $ filter snd $ head idWithCoord
+  print [(pos, obj) | (pos, id) <- idWithCoord, let obj = idToObj M.! id]
 
 ----------------------------
 
