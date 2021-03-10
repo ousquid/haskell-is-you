@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d72ba8fe5d067d1b9667bb641b23764250182b9da8a669a0937e74ea2f4f7bfe
+-- hash: 934773b4fb6c76538ec884919f6ff5349bd5fb2323113034d3a9fd04986afe9f
 
 name:           haskell-is-you
 version:        0.1.0.0
@@ -44,9 +44,11 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , filepath
     , gloss
     , gloss-juicy
     , split
+    , text
   default-language: Haskell2010
 
 executable haskell-is-you-exe
@@ -62,7 +64,12 @@ executable haskell-is-you-exe
     , gloss
     , gloss-juicy
     , haskell-is-you
+    , lens
+    , lens-aeson
     , split
+    , text
+    , xml-conduit
+    , xml-lens
   default-language: Haskell2010
 
 test-suite haskell-is-you-test

@@ -5,16 +5,28 @@ where
 
 import Data.List.Split
 import qualified Data.Map as M
+import qualified Data.Text as T
 import qualified Direction as D
 import Draw
 import Graphics.Gloss
+import System.FilePath.Posix
 import Tile
 import World
 
-initWorld :: (WorldWidth, WorldHeight) -> [String] -> World
-initWorld worldSize stage =
-  let objects = map (stringToObject . splitOn ",") stage
-   in World {worldObjectsList = [zipWith (\g x -> g x) objects [1 ..] ++ voidObjects worldSize]}
+initWorld :: (WorldWidth, WorldHeight) -> String -> [Integer] -> [T.Text] -> World
+initWorld (width, height) stage tileIds tileImgPaths = World {worldObjectsList = [zipWith (\g x -> g x) objects [1 ..] ++ voidObjects (width, height)]}
+  where
+    stageInt = (map read $ splitOn "," stage) :: [Integer]
+    idWithCoord = [((idx `mod` width, height - 1 - idx `div` width), id) | (idx, id) <- zip [0 ..] stageInt, id /= 0]
+    idToObj = M.fromList $ zip tileIds $ map parseImagePath tileImgPaths
+    objects = [Object w h dir kind | ((w, h), id) <- idWithCoord, let (kind, dir) = idToObj M.! id]
+
+parseImagePath :: T.Text -> (Icon, D.Direction)
+parseImagePath str = (icon, dir)
+  where
+    [iconStr, directionStr] = splitOn "_" $ takeBaseName $ T.unpack str
+    icon = if head iconStr == 'T' then OTile (read iconStr :: Tile) else OCharacter (read iconStr :: Character)
+    dir = read directionStr :: D.Direction
 
 voidObjects :: (WorldWidth, WorldHeight) -> [Object]
 voidObjects (width, height) = leftAndRight ++ aboveAndBottom
