@@ -53,7 +53,7 @@ getMovableList objects getRules dir you
     canMove :: [Object] -> [Rule] -> D.Direction -> (Int, Int) -> [Object] -> Bool
     canMove objects getRules dir (x, y) pushedObjs =
       case getCellCollision objects getRules (x, y) pushedObjs of
-        PUSH -> canMove objects getRules dir (x, y) newPosObjs
+        PUSH -> canMove objects getRules dir (updateXY x y dir) newPosObjs
         STOP -> False
         THROUGH -> True
       where
