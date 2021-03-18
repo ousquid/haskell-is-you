@@ -5,10 +5,12 @@ module Action
     sink,
     defeat,
     melt,
+    open,
   )
 where
 
 import Data.List
+import Debug.Trace
 import qualified Direction as D
 import Rule (Rule (Rule, ruleC, ruleS), nounList)
 import Tile (Tile (..))
@@ -43,16 +45,20 @@ data Collision = STOP | PUSH | THROUGH deriving (Eq)
 
 getMovableList :: [Object] -> [Rule] -> D.Direction -> Object -> [Object]
 getMovableList objects getRules dir you
-  | canMove objects getRules dir (updateXY x y dir) = getMovableList' objects getRules dir [you]
+  | canMove objects getRules dir (updateXY x y dir) [you] = trace (show (getMovableList' objects getRules dir [you])) (getMovableList' objects getRules dir [you])
   | otherwise = []
   where
     x = objectX you
     y = objectY you
-    canMove objects getRules dir (x, y) =
-      case getCellCollision objects getRules (x, y) of
-        PUSH -> canMove objects getRules dir $ updateXY x y dir
+    canMove :: [Object] -> [Rule] -> D.Direction -> (Int, Int) -> [Object] -> Bool
+    canMove objects getRules dir (x, y) pushedObjs =
+      case getCellCollision objects getRules (x, y) pushedObjs of
+        PUSH -> canMove objects getRules dir (x, y) newPosObjs
         STOP -> False
         THROUGH -> True
+      where
+        newPosObjs = findObjects objects (x, y)
+
     getMovableList' objects getRules dir pushedObjs =
       case collisionState of
         PUSH -> pushedObjs ++ movableList
@@ -61,15 +67,28 @@ getMovableList objects getRules dir you
         x = objectX $ head pushedObjs
         y = objectY $ head pushedObjs
         newPos = updateXY x y dir
+        newPosObjs = findObjects objects newPos
         movableList = getMovableList' objects getRules dir pushList
-        pushList = filter (\obj -> getObjectCollision getRules obj == PUSH) $ findObjects objects newPos
-        collisionState = getCellCollision objects getRules newPos
 
-    getCellCollision objects getRules pos
+        (pushList, collisionState)
+          | isAll TOpen pushedObjs && isAll TShut newPosObjs = ([], THROUGH)
+          | isAll TShut pushedObjs && isAll TOpen newPosObjs = ([], THROUGH)
+          | otherwise = (filter (\obj -> getObjectCollision getRules obj == PUSH) $ findObjects objects newPos, getCellCollision objects getRules newPos pushedObjs)
+
+    isAll :: Tile -> [Object] -> Bool
+    isAll tile objs = length (getObjectsWithComplement tile getRules objs) == length objs
+
+    getCellCollision objects getRules pos pushedObjs
+      | isAll TOpen pushedObjs && isAll TShut newPosObjs = THROUGH
+      | isAll TShut pushedObjs && isAll TOpen newPosObjs = THROUGH
       | STOP `elem` objectStates = STOP
       | PUSH `elem` objectStates = PUSH
       | otherwise = THROUGH
       where
+        x = objectX $ head pushedObjs
+        y = objectY $ head pushedObjs
+        newPos = updateXY x y dir
+        newPosObjs = trace (show (findObjects objects newPos)) (findObjects objects newPos)
         objectStates = map (getObjectCollision getRules) $ findObjects objects pos
 
     getObjectCollision :: [Rule] -> Object -> Collision
@@ -115,6 +134,14 @@ sink world = removeObjects world removeList
     sinkList = getObjectsWithComplement TSink (getRules world) (worldObjects world)
     sinkPosList = nub $ map (\o -> (objectX o, objectY o)) sinkList
     removeList = concat [objList | sinkPos <- sinkPosList, let objList = findObjects (worldObjects world) sinkPos, length objList > 1]
+
+open :: World -> World
+open world = removeObjects world removeList
+  where
+    shutList = getObjectsWithComplement TShut (getRules world) (worldObjects world)
+    openList = getObjectsWithComplement TOpen (getRules world) (worldObjects world)
+    openPosList = nub $ map (\o -> (objectX o, objectY o)) openList
+    removeList = concat [[fst obj, snd obj] | openPos <- openPosList, let shuts = findObjects shutList openPos, let opens = findObjects openList openPos, let objList = zip shuts opens, obj <- objList]
 
 melt :: World -> World
 melt world = removeObjects world removeList

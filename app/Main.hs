@@ -35,7 +35,7 @@ handleEvent _ world = return world
 
 updateWorld :: Key -> World -> World
 updateWorld key world = case action of
-  Move dir -> removeUncangedWorldObjects $ defeat $ melt $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
+  Move dir -> removeUncangedWorldObjects $ defeat $ melt $ open $ sink $ metamorphose $ walk dir $ duplicateWorldObjects world
   Step -> metamorphose $ duplicateWorldObjects world
   Reverse -> tailWorldObjects world
   DoNothing -> world

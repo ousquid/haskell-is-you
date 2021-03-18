@@ -1,4 +1,12 @@
 { "columns":0,
+ "editorsettings":
+    {
+     "export":
+        {
+         "format":"",
+         "target":"."
+        }
+    },
  "grid":
     {
      "height":1,
@@ -8,7 +16,7 @@
  "margin":0,
  "name":"haskell_is_you",
  "spacing":0,
- "tilecount":96,
+ "tilecount":120,
  "tiledversion":"1.4.3",
  "tileheight":320,
  "tiles":[
@@ -470,27 +478,19 @@
         }, 
         {
          "id":76,
-         "image":"..\/imgs\/TText_Down.png",
-         "imageheight":320,
-         "imagewidth":320
+         "image":"..\/imgs\/TText_Down.png"
         }, 
         {
          "id":77,
-         "image":"..\/imgs\/TText_Left.png",
-         "imageheight":320,
-         "imagewidth":320
+         "image":"..\/imgs\/TText_Left.png"
         }, 
         {
          "id":78,
-         "image":"..\/imgs\/TText_Right.png",
-         "imageheight":320,
-         "imagewidth":320
+         "image":"..\/imgs\/TText_Right.png"
         }, 
         {
          "id":79,
-         "image":"..\/imgs\/TText_Up.png",
-         "imageheight":320,
-         "imagewidth":320
+         "image":"..\/imgs\/TText_Up.png"
         }, 
         {
          "id":80,
@@ -585,6 +585,150 @@
         {
          "id":95,
          "image":"..\/imgs\/TYou_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":96,
+         "image":"..\/imgs\/CDoor_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":97,
+         "image":"..\/imgs\/CDoor_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":98,
+         "image":"..\/imgs\/CDoor_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":99,
+         "image":"..\/imgs\/CDoor_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":100,
+         "image":"..\/imgs\/CKey_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":101,
+         "image":"..\/imgs\/CKey_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":102,
+         "image":"..\/imgs\/CKey_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":103,
+         "image":"..\/imgs\/CKey_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":104,
+         "image":"..\/imgs\/TDoor_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":105,
+         "image":"..\/imgs\/TDoor_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":106,
+         "image":"..\/imgs\/TDoor_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":107,
+         "image":"..\/imgs\/TDoor_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":108,
+         "image":"..\/imgs\/TKey_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":109,
+         "image":"..\/imgs\/TKey_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":110,
+         "image":"..\/imgs\/TKey_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":111,
+         "image":"..\/imgs\/TKey_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":112,
+         "image":"..\/imgs\/TOpen_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":113,
+         "image":"..\/imgs\/TOpen_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":114,
+         "image":"..\/imgs\/TOpen_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":115,
+         "image":"..\/imgs\/TOpen_Up.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":116,
+         "image":"..\/imgs\/TShut_Down.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":117,
+         "image":"..\/imgs\/TShut_Left.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":118,
+         "image":"..\/imgs\/TShut_Right.png",
+         "imageheight":320,
+         "imagewidth":320
+        }, 
+        {
+         "id":119,
+         "image":"..\/imgs\/TShut_Up.png",
          "imageheight":320,
          "imagewidth":320
         }],
